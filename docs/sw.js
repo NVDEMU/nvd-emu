@@ -1,4 +1,4 @@
-const CACHE_NAME = "nvd-emu-web-shell-v1";
+const CACHE_NAME = "nvd-emu-web-shell-v2";
 const APP_FILES = ["./", "./index.html", "./manifest.webmanifest", "./nvd-emu-logo.svg"];
 
 self.addEventListener("install", event => {

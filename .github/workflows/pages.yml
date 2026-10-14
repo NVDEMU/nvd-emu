@@ -37,7 +37,7 @@ jobs:
 
           html = Path("docs/index.html").read_text(encoding="utf-8")
           manifest = json.loads(Path("docs/manifest.webmanifest").read_text(encoding="utf-8"))
-          scripts = re.findall(r"<script(?:\s[^>]*)?>([\s\S]*?)</script>", html)
+          scripts = re.findall(r"<script(?![^>]*\bsrc=)(?:\s[^>]*)?>([\s\S]*?)</script>", html)
           if len(scripts) != 1:
               raise SystemExit(f"Expected exactly one inline page script, found {len(scripts)}")
           if manifest.get("name") != "nvd-emu" or manifest.get("start_url") != "./":
@@ -47,7 +47,7 @@ jobs:
           for required in required_systems:
               if required not in catalog:
                   raise SystemExit(f"Missing configured emulator system: {required}")
-          configured_systems = re.findall(r'^\\s{4}(?:[A-Za-z0-9_]+|"[^"]+"):\\{', catalog, flags=re.M)
+          configured_systems = re.findall(r'^\s{4}(?:[A-Za-z0-9_]+|"[^"]+"):\{', catalog, flags=re.M)
           if len(configured_systems) < 34:
               raise SystemExit(f"Expected at least 34 system mappings, found {len(configured_systems)}")
           for page in ("library.html", "systems.html", "player.html", "settings.html"):
@@ -77,7 +77,7 @@ jobs:
           Path("/tmp/nvd-emu-web-inline.js").write_text(scripts[0], encoding="utf-8")
           for page in ("docs/library.html", "docs/systems.html", "docs/player.html", "docs/settings.html"):
               source = Path(page).read_text(encoding="utf-8")
-              inline = re.findall(r"<script(?![^>]*\\bsrc=)(?:\\s[^>]*)?>([\\s\\S]*?)</script>", source)
+              inline = re.findall(r"<script(?![^>]*\bsrc=)(?:\s[^>]*)?>([\s\S]*?)</script>", source)
               for index, code in enumerate(inline):
                   Path(f"/tmp/nvd-emu-{Path(page).stem}-{index}.js").write_text(code, encoding="utf-8")
           print(f"Manifest, {len(configured_systems)} system mappings, four standalone pages, artwork and storage modules, PS1 BIOS/DualShock options, save controls, Atari test and Pages root validated.")

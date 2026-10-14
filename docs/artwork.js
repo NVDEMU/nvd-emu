@@ -124,6 +124,7 @@
     img.loading="lazy";
     img.decoding="async";
     img.referrerPolicy="no-referrer";
+    if(window.NVD_COI_MODE==="require-corp") img.crossOrigin="anonymous";
     img.alt=displayGameName(entry.name)+" cover art";
     const fallback=img.parentElement&&img.parentElement.querySelector(".cover-fallback");
     const urls=candidatesFor(entry,system);

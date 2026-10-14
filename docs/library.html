@@ -55,17 +55,20 @@
   }
   $("add-games").addEventListener("click",async()=>{
     const files=Array.from($("rom-files").files||[]);if(!files.length){status("Choose at least one game file first.","error");return;}
-    const systemId=select.value;let saved=0;
+    const systemId=select.value;let saved=0,skipped=0,processed=0;
     $("add-games").disabled=true;
     try{
       for(const file of files){
-        status("Saving "+file.name+" ("+(saved+1)+" of "+files.length+")…");
-        await window.NVDLibrary.save(file,systemId);saved++;
+        status("Checking "+file.name+" ("+(processed+1)+" of "+files.length+")…");
+        const result=await window.NVDLibrary.save(file,systemId);
+        if(result.alreadyExists)skipped++;else saved++;
+        processed++;
       }
       $("rom-files").value="";
-      status("Saved "+saved+" game"+(saved===1?"":"s")+" to this browser's persistent library.","ok");
+      const summary="Added "+saved+" new game"+(saved===1?"":"s")+"; "+skipped+" already in the library and skipped.";
+      status(summary,"ok");
       await render();
-    }catch(error){status("Saved "+saved+" of "+files.length+" file(s). Storage error: "+error.message,"error");await render();}
+    }catch(error){status("Checked "+processed+" of "+files.length+" file(s); added "+saved+". Storage error: "+error.message,"error");await render();}
     finally{$("add-games").disabled=false;}
   });
   window.NVDLibrary.requestPersistence().then(ok=>{if(ok)status("Browser granted persistent storage. Your game library will be protected from routine storage eviction.","ok");else status("Library is ready. The browser may still clear site data from its settings or under storage pressure.");}).catch(()=>{});

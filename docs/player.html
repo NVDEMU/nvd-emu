@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101114"><meta name="description" content="Load your own game files and play supported retro systems in the browser."><title>Player · nvd-emu</title><link rel="icon" href="./nvd-emu-logo.svg" type="image/svg+xml"><link rel="manifest" href="./manifest.webmanifest"><link rel="stylesheet" href="./site.css"></head><body><div class="shell"><aside>
+  <div class="brand"><img src="./nvd-emu-logo.svg" alt="nvd-emu logo"><div><strong>nvd-emu</strong><span class="eyebrow">MULTI-SYSTEM EMULATOR</span></div></div>
+  <div class="eyebrow" style="padding:12px 9px 0">WORKSPACE</div>
+  <a class="nav " href="./index.html">▦ &nbsp; Overview</a>
+  <a class="nav " href="./library.html">▤ &nbsp; Game library</a>
+  <a class="nav " href="./systems.html">◈ &nbsp; Systems</a>
+  <a class="nav active" href="./player.html">▶ &nbsp; Player</a>
+  <a class="nav " href="./settings.html">⚙ &nbsp; Settings</a>
+  <div class="side-note"><strong style="color:#f1f1f3">Browser-first retro gaming</strong><br>ROMs stay in this browser profile. EmulatorJS cores load online when you start a game.</div>
+</aside><main>
+  <header class="topline"><div><div class="eyebrow">NVD-EMU WEB / PLAYER</div><h1>Ready player.</h1><p style="margin:0">Choose a system and load a game file you own.</p></div><span class="pill"><span class="dot"></span> LOCAL ROM</span></header>
+  <div class="player-layout">
+    <section class="card"><div class="card-head"><h2>Game setup</h2></div><div class="card-body">
+      <div style="margin-bottom:14px"><label for="system-select">System</label><select id="system-select"></select></div>
+      <div style="margin-bottom:14px"><label for="rom-file">Game file</label><input id="rom-file" type="file"></div>
+      <div id="bios-field" class="hidden" style="margin-bottom:14px"><label for="bios-file">Optional PlayStation BIOS</label><input id="bios-file" type="file" accept=".bin,.rom"><p style="font-size:11px;margin:7px 0 0">No BIOS is included. Some games may need a compatible BIOS dumped from your own console.</p></div>
+      <div id="selected-name" class="muted" style="font-size:11px;overflow-wrap:anywhere">No game selected.</div>
+      <button id="play" class="primary" style="width:100%;margin-top:14px">▶ Play game</button>
+      <button id="stop" style="width:100%;margin-top:8px">Stop game</button>
+      <div id="player-status" class="status" role="status">The emulator engine is downloaded from EmulatorJS when you start a game.</div>
+      <p style="font-size:11px">Remap controls, save/load states, and configure input using the EmulatorJS toolbar. ROMs are not uploaded to NVD-EMU.</p>
+    </div></section>
+    <section class="card"><div class="card-head"><h2 id="game-title">Now playing</h2><a href="./library.html" style="font-size:11px">Open library ↗</a></div><div id="placeholder" class="player-placeholder"><div><div class="eyebrow">NVD-EMU PLAYER</div><h2 style="margin-top:10px">Your game goes here.</h2><p>Pick a system and file, then press Play.</p></div></div><iframe id="emulator-frame" class="player-frame hidden" title="EmulatorJS game player" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe></section>
+  </div>
+  <div class="footer">EmulatorJS stable CDN is used for the browser core. Some systems need additional files or BIOS. Compatibility varies by game. Use only game files you are legally entitled to use.</div>
+</main></div>
+<script src="./systems-data.js"></script><script src="./storage.js"></script>
+<script>
+(() => {
+  const $=id=>document.getElementById(id), systems=window.NVD_SYSTEMS, select=$("system-select"), romInput=$("rom-file"), biosInput=$("bios-file"), frame=$("emulator-frame");
+  let selectedFile=null, selectedBios=null, gameUrl=null, biosUrl=null;
+  for(const [id,system] of Object.entries(systems).sort((a,b)=>a[1].name.localeCompare(b[1].name))){const option=document.createElement("option");option.value=id;option.textContent=system.name;select.append(option);}
+  const params=new URLSearchParams(location.search), requestedSystem=params.get("system");
+  if(systems[requestedSystem])select.value=requestedSystem;
+  function setStatus(message,kind=""){ $("player-status").textContent=message;$("player-status").className="status "+kind; }
+  function syncSystem(){ $("bios-field").classList.toggle("hidden",select.value!=="psx"); }
+  function stop(){
+    frame.srcdoc="";frame.classList.add("hidden");$("placeholder").classList.remove("hidden");
+    if(gameUrl){URL.revokeObjectURL(gameUrl);gameUrl=null;}if(biosUrl){URL.revokeObjectURL(biosUrl);biosUrl=null;}
+    setStatus("Game stopped.");
+  }
+  function supported(file,system){const ext=(file.name.split(".").pop()||"").toLowerCase();return system.extensions.includes(ext)||ext==="zip";}
+  function hashGame(value){let h=2166136261;for(let i=0;i<value.length;i++)h=Math.imul(h^value.charCodeAt(i),16777619);return ((h>>>0)&0x7fffffff)||1;}
+  async function launch(){
+    if(!selectedFile){setStatus("Choose a game file first.","error");return;}
+    const id=select.value, system=systems[id];
+    if(!supported(selectedFile,system)){setStatus("That file extension doesn't match "+system.name+". Choose the correct system or another file.","error");return;}
+    try{
+      await window.NVDLibrary.save(selectedFile,id);
+      setStatus("Game saved to your browser library. Starting "+system.name+"…","ok");
+    }catch(error){setStatus("Browser storage couldn't save this ROM ("+error.message+"). Trying to play it for this session…","error");}
+    stop();
+    gameUrl=URL.createObjectURL(selectedFile);
+    if(id==="psx"&&selectedBios)biosUrl=URL.createObjectURL(selectedBios);
+    $("game-title").textContent=selectedFile.name;
+    $("placeholder").classList.add("hidden");frame.classList.remove("hidden");
+    const config={core:id,romUrl:gameUrl,name:selectedFile.name,gameID:hashGame(id+":"+selectedFile.name.toLowerCase()),biosUrl:biosUrl||""};
+    const payload=JSON.stringify(config).replace(/</g,"\\u003c").replace(/\u2028/g,"\\u2028").replace(/\u2029/g,"\\u2029");
+    frame.srcdoc='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;background:#08090b;color:white;height:100%;font-family:system-ui,sans-serif}#game{width:100%;height:100%;min-height:320px}body{overflow:hidden}</style></head><body><div id="game"></div><script>const config='+payload+';window.EJS_player="#game";window.EJS_core=config.core;window.EJS_gameUrl=config.romUrl;window.EJS_gameName=config.name;window.EJS_pathtodata="https://cdn.emulatorjs.org/stable/data/";window.EJS_color="#dc292b";window.EJS_startOnLoaded=true;window.EJS_gameID=config.gameID;window.EJS_biosUrl=config.biosUrl||"";window.EJS_volume=0.8;window.EJS_language="en-US";window.EJS_defaultOptions=config.core==="psx"?{"save-state-location":"browser","save-state-slot":0,"pcsx_rearmed_pad1type":"dualshock","pcsx_rearmed_bios":"auto","pcsx_rearmed_analog_combo":"l1+r1+select"}:{"save-state-location":"browser","save-state-slot":0};window.EJS_Buttons={playPause:true,restart:true,mute:true,settings:true,fullscreen:true,saveState:true,loadState:true,gamepad:true,volume:true,saveSavFiles:true,loadSavFiles:true,quickSave:true,quickLoad:true,screenshot:true,cacheManager:true,exitEmulation:true};<\/script><script src="https://cdn.emulatorjs.org/stable/data/loader.js"><\/script></body></html>';
+    setStatus("Loading the "+system.core+" core from EmulatorJS. ROM stays local.");
+  }
+  select.addEventListener("change",syncSystem);
+  romInput.addEventListener("change",()=>{selectedFile=romInput.files&&romInput.files[0]||null;$("selected-name").textContent=selectedFile?selectedFile.name:"No game selected.";});
+  biosInput.addEventListener("change",()=>{selectedBios=biosInput.files&&biosInput.files[0]||null;if(selectedBios)setStatus("Optional BIOS selected locally; it is not uploaded.");});
+  $("play").addEventListener("click",()=>launch().catch(error=>setStatus("Could not start game: "+error.message,"error")));
+  $("stop").addEventListener("click",stop);
+  syncSystem();
+  if(params.get("launch")){
+    window.NVDLibrary.get(params.get("launch")).then(record=>{
+      if(!record)throw new Error("Saved game not found. Re-add the file in the library.");
+      selectedFile=window.NVDLibrary.toFile(record);if(!selectedFile)throw new Error("Saved ROM data is unreadable. Re-add the file in the library.");
+      select.value=record.systemId;syncSystem();$("selected-name").textContent=selectedFile.name;
+      return launch();
+    }).catch(error=>setStatus(error.message,"error"));
+  }
+  window.NVDLibrary.requestPersistence().catch(()=>{});
+  window.addEventListener("beforeunload",()=>{if(gameUrl)URL.revokeObjectURL(gameUrl);if(biosUrl)URL.revokeObjectURL(biosUrl);});
+})();
+</script></body></html>

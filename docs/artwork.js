@@ -20,10 +20,60 @@
     const clean = String(name || "Unknown game").replace(/\\/g,"/").split("/").pop();
     return clean.replace(/\.[^.]+$/,"").replace(/_/g," ").trim() || "Untitled game";
   }
+  // Use the final Wikimedia upload URLs directly. Special:FilePath redirects through
+  // Commons and can fail CORS checks in cross-origin-isolated browsers such as Orion.
+  const commonsDirectFiles =   {
+      "Atari 2600 logo-01-06.svg": "https://upload.wikimedia.org/wikipedia/commons/0/0c/Atari_2600_logo-01-06.svg",
+      "Atari 7800 logo.svg": "https://upload.wikimedia.org/wikipedia/commons/4/47/Atari_7800_logo.svg",
+      "Atari Lynx logo.svg": "https://upload.wikimedia.org/wikipedia/commons/c/c6/Atari_Lynx_logo.svg",
+      "NES logo.svg": "https://upload.wikimedia.org/wikipedia/commons/0/0d/NES_logo.svg",
+      "Nintendo logo.svg": "https://upload.wikimedia.org/wikipedia/commons/5/51/Nintendo_logo.svg",
+      "SNES logo.svg": "https://upload.wikimedia.org/wikipedia/commons/2/2c/SNES_logo.svg",
+      "Gameboy logo.svg": "https://upload.wikimedia.org/wikipedia/commons/3/39/Gameboy_logo.svg",
+      "Game Boy Advance logo.svg": "https://upload.wikimedia.org/wikipedia/commons/5/50/Game_Boy_Advance_logo.svg",
+      "Nintendo 64 wordmark.svg": "https://upload.wikimedia.org/wikipedia/commons/5/5f/Nintendo_64_wordmark.svg",
+      "Nintendo DS Logo.svg": "https://upload.wikimedia.org/wikipedia/commons/a/af/Nintendo_DS_Logo.svg",
+      "PlayStation logo.svg": "https://upload.wikimedia.org/wikipedia/commons/0/00/PlayStation_logo.svg",
+      "PSP Logo.svg": "https://upload.wikimedia.org/wikipedia/commons/0/0e/PSP_Logo.svg",
+      "Master System Logo.svg": "https://upload.wikimedia.org/wikipedia/commons/8/83/Master_System_Logo.svg",
+      "Game gear us-jp logo.svg": "https://upload.wikimedia.org/wikipedia/commons/4/41/Game_gear_us-jp_logo.svg",
+      "Sega genesis logo.svg": "https://upload.wikimedia.org/wikipedia/commons/7/74/Sega_genesis_logo.svg",
+      "Sega CD Logo.svg": "https://upload.wikimedia.org/wikipedia/commons/f/ff/Sega_CD_Logo.svg",
+      "Sega 32X logo.svg": "https://upload.wikimedia.org/wikipedia/commons/a/a4/Sega_32X_logo.svg",
+      "Sega Saturn Black Logo.svg": "https://upload.wikimedia.org/wikipedia/commons/7/78/Sega_Saturn_Black_Logo.svg",
+      "Virtualboy logo.svg": "https://upload.wikimedia.org/wikipedia/commons/9/96/Virtualboy_logo.svg",
+      "PC engine logo red.svg": "https://upload.wikimedia.org/wikipedia/commons/2/21/PC_engine_logo_red.svg",
+      "Bandai WonderSwan horizontal logo.svg": "https://upload.wikimedia.org/wikipedia/commons/7/71/Bandai_WonderSwan_horizontal_logo.svg",
+      "Neo Geo logo.svg": "https://upload.wikimedia.org/wikipedia/commons/f/f3/Neo_Geo_logo.svg",
+      "Atari 5200 logo.svg": "https://upload.wikimedia.org/wikipedia/commons/6/6d/Atari_5200_logo.svg",
+      "Atari Jaguar logo.svg": "https://upload.wikimedia.org/wikipedia/commons/f/f4/Atari_Jaguar_logo.svg",
+      "COLECO VISION LOGO.svg": "https://upload.wikimedia.org/wikipedia/commons/9/9a/COLECO_VISION_LOGO.svg",
+      "Commodore 64 logo (2).svg": "https://upload.wikimedia.org/wikipedia/commons/3/3a/Commodore_64_logo_(2).svg",
+      "Commodore VIC 20 logo.svg": "https://upload.wikimedia.org/wikipedia/commons/9/98/Commodore_VIC_20_logo.svg",
+      "Neo Geo Pocket logo.svg": "https://upload.wikimedia.org/wikipedia/commons/3/35/Neo_Geo_Pocket_logo.svg",
+      "3DO Logo.svg": "https://upload.wikimedia.org/wikipedia/commons/a/aa/3DO_Logo.svg",
+      "Amiga-Logo.svg": "https://upload.wikimedia.org/wikipedia/commons/d/df/Amiga-Logo.svg",
+      "MS-DOS logo.svg": "https://upload.wikimedia.org/wikipedia/commons/7/71/MS-DOS_logo.svg",
+      "Microsoft logo (2012).svg": "https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_(2012).svg",
+      "Commodore PET logo-16.svg": "https://upload.wikimedia.org/wikipedia/commons/9/99/Commodore_PET_logo-16.svg",
+      "Commodore Plus 4 logo-13.svg": "https://upload.wikimedia.org/wikipedia/commons/4/4d/Commodore_Plus_4_logo-13.svg",
+      "Family Computer Disk System logo.svg": "https://upload.wikimedia.org/wikipedia/commons/3/35/Family_Computer_Disk_System_logo.svg",
+      "MAMELogo.svg": "https://upload.wikimedia.org/wikipedia/commons/c/c3/MAMELogo.svg",
+      "Philips CD-i logo.svg": "https://upload.wikimedia.org/wikipedia/commons/e/e5/Philips_CD-i_logo.svg",
+      "Nintendo 3DS logo.svg": "https://upload.wikimedia.org/wikipedia/commons/8/89/Nintendo_3DS_logo.svg",
+      "Nintendo GameCube Official Logo.svg": "https://upload.wikimedia.org/wikipedia/commons/2/29/Nintendo_GameCube_Official_Logo.svg",
+      "Wii.svg": "https://upload.wikimedia.org/wikipedia/commons/b/bc/Wii.svg",
+      "PlayStation 2 logo.svg": "https://upload.wikimedia.org/wikipedia/commons/7/76/PlayStation_2_logo.svg",
+      "Dreamcast logo.svg": "https://upload.wikimedia.org/wikipedia/commons/7/7e/Dreamcast_logo.svg",
+      "SG-1000 Logo.svg": "https://upload.wikimedia.org/wikipedia/commons/9/90/SG-1000_Logo.svg",
+      "Atari ST logo-01.svg": "https://upload.wikimedia.org/wikipedia/commons/7/7c/Atari_ST_logo-01.svg",
+      "BANDAI.svg": "https://upload.wikimedia.org/wikipedia/commons/f/f7/BANDAI.svg",
+      "WonderSwan logo.svg": "https://upload.wikimedia.org/wikipedia/commons/c/cd/WonderSwan_logo.svg"
+  };
   function logoSource(value) {
     if (!value) return "";
-    if (/^(https?:)?\/\//i.test(value) || value.startsWith("./") || value.startsWith("../")) return value;
-    return "https://commons.wikimedia.org/wiki/Special:FilePath/" + encodeURIComponent(value);
+    if (/^(https?:)?\\/\\//i.test(value) || value.startsWith("./") || value.startsWith("../")) return value;
+    return commonsDirectFiles[value] || "";
   }
   function setSystemLogo(img, system) {
     img.loading = "lazy";

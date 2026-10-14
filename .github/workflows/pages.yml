@@ -1,33 +1,32 @@
-name: Deploy nvd-emu Web
+name: Validate nvd-emu Web
 
 on:
   push:
     branches: [main]
     paths:
+      - "index.html"
+      - "docs/**"
+      - ".github/workflows/pages.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "index.html"
       - "docs/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: github-pages
-  cancel-in-progress: true
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  validate:
+    name: Validate web frontend
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Validate web app assets and inline JavaScript
+      - name: Validate web app assets, manifest and inline JavaScript
         shell: bash
         run: |
           set -euo pipefail
@@ -46,23 +45,18 @@ jobs:
           for required in ("atari2600", "nes", "gb", "gba", "snes", "segaMS", "segaMD"):
               if required not in html:
                   raise SystemExit(f"Missing configured emulator system: {required}")
+          if "EJS_Buttons" not in html or "gamepad:true" not in html:
+              raise SystemExit("The emulator toolbar must expose controller settings")
+          if "saveState:true" not in html or "loadState:true" not in html:
+              raise SystemExit("Save/load state controls must be enabled")
+          if "makeAtari2600TestCartridge" not in html:
+              raise SystemExit("The built-in Atari 2600 diagnostic cartridge is missing")
+          if not Path("index.html").exists() or "./docs/" not in Path("index.html").read_text(encoding="utf-8"):
+              raise SystemExit("The root Pages entry must route visitors into the web application")
           Path("/tmp/nvd-emu-web-inline.js").write_text(scripts[0], encoding="utf-8")
-          print("Manifest and required system mappings validated.")
+          print("Manifest, seven system mappings, control/save buttons, Atari test and Pages root validated.")
           PY
           node --check /tmp/nvd-emu-web-inline.js
+          node --check docs/sw.js
           test -f docs/nvd-emu-logo.svg
-          test -f docs/sw.js
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
-      - name: Upload web app
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          test -f docs/.nojekyll

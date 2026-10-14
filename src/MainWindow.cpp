@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 
 #include <QAbstractItemView>
+#include <QCoreApplication>
 #include <QDir>
 #include <QDirIterator>
 #include <QFileDialog>
@@ -258,7 +259,7 @@ void MainWindow::buildUi()
 
 void MainWindow::applyTheme()
 {
-    setStyleSheet(QStringLiteral(R"(
+    setStyleSheet(QString::fromUtf8(R"(
         QMainWindow, QWidget {
             background: #101114;
             color: #f3f3f5;

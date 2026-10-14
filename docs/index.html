@@ -66,7 +66,7 @@
     .card-body { padding:18px; }
     .system-card { display:flex; gap:12px; align-items:center; border:1px solid #303139; border-radius:11px; padding:13px; margin-bottom:10px; background:#191a1f; }
     .system-icon { display:grid; place-items:center; width:42px; height:42px; flex:0 0 42px; border-radius:10px; background:#342023; color:#ff8587; font-weight:900; font-size:13px; }
-    .system-card strong { display:block; margin-bottom:4px; }
+    .system-card .system-art { width:54px;height:48px;flex:0 0 54px;display:grid;place-items:center;border-radius:10px;background:linear-gradient(145deg,#292b35,#17181d);border:1px solid #41434e;font-size:25px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.025); }\n    .system-card .system-art.atari { color:#ffb36b;background:linear-gradient(145deg,#35271c,#1c1714); }\n    .system-card .system-art.nintendo { color:#ff777b;background:linear-gradient(145deg,#342023,#1b171b); }\n    .system-card .system-art.playstation { color:#9baeff;background:linear-gradient(145deg,#202a45,#171923); }\n    .system-card .system-art.sega { color:#8fcaff;background:linear-gradient(145deg,#1c2d44,#171923); }\n    .system-card .system-art.arcade { color:#e5a2ff;background:linear-gradient(145deg,#30203b,#171923); }\n    .system-card .system-art.other { color:#8fe1ca; }\n    .system-card strong { display:block; margin-bottom:4px; }
     .system-card small { display:block; color:var(--muted); font-size:11px; line-height:1.4; }
     .system-card button { margin-left:auto; padding:8px 10px; font-size:12px; }
     .field { margin-bottom:14px; }
@@ -145,7 +145,7 @@
         <div class="hero">
           <div class="eyebrow" style="color:#ff8587;margin-bottom:12px">RETRO GAMING, REIMAGINED</div>
           <h1 style="font-size:clamp(25px,3.4vw,42px);max-width:660px">One library. Multiple systems. Your games.</h1>
-          <p>Play 13 classic systems in one browser library, including NES, SNES, Nintendo 64 and PlayStation. Load a game file you already have, press play, and keep playing right here.</p>
+          <p>Play 22 classic systems in one browser library, from Atari and Nintendo to PlayStation, Sega and arcade systems. Load a game file you already have, press play, and keep playing right here.</p>
           <div class="hero-actions">
             <button class="primary" id="hero-load">＋ &nbsp; Load a game</button>
             <button id="hero-systems">Explore systems</button>
@@ -153,7 +153,7 @@
         </div>
 
         <div class="metrics">
-          <div class="metric"><div class="label">SYSTEMS CONFIGURED</div><div class="value" id="system-count">13</div></div>
+          <div class="metric"><div class="label">SYSTEMS CONFIGURED</div><div class="value" id="system-count">22</div></div>
           <div class="metric"><div class="label">GAMES IN THIS SESSION</div><div class="value" id="game-count">0</div></div>
           <div class="metric"><div class="label">ROM UPLOADS</div><div class="value">0</div><div class="muted" style="font-size:10px;margin-top:4px">Files stay local</div></div>
         </div>
@@ -179,7 +179,7 @@
                 <span>or browse for a ROM you own</span>
                 <label class="file-label" for="rom-file">Browse files</label>
                 <button id="test-2600" class="subtle" type="button" style="margin-top:8px;font-size:11px">Run built-in Atari 2600 color test · no ROM needed</button>
-                <input id="rom-file" type="file" accept=".a26,.a78,.bin,.rom,.nes,.gb,.gbc,.gba,.sfc,.smc,.sms,.gg,.md,.gen,.n64,.z64,.v64,.chd,.pbp,.iso,.cue,.img,.mdf,.vb,.vboy,.pce,.sgx,.zip">
+                <input id="rom-file" type="file" accept=".a26,.a78,.lnx,.bin,.rom,.nes,.gb,.gbc,.gba,.sfc,.smc,.nds,.sms,.gg,.md,.gen,.n64,.z64,.v64,.chd,.pbp,.iso,.cue,.img,.mdf,.cso,.cdi,.gdi,.32x,.ws,.wsc,.vb,.vboy,.pce,.sgx,.zip">
               </div>
               <div id="selected-file" class="selected-file hidden"><span>▣</span><span id="file-name" class="name"></span><button id="clear-file" class="subtle" style="padding:5px 8px">×</button></div>
               <button id="play-button" class="primary" disabled style="width:100%;margin-top:14px">Play game</button>
@@ -235,7 +235,7 @@
             <div class="settings-line"><span>Emulation engine</span><strong>EmulatorJS / libretro cores</strong></div>
             <div class="settings-line"><span>Save states</span><strong>Save/Load + quick slots in emulator toolbar</strong></div>
             <div class="settings-line"><span>Control remapping</span><strong>Keyboard + supported gamepads from toolbar settings</strong></div>
-            <div class="settings-line"><span>Systems</span><strong id="settings-system-count">13 configured through EmulatorJS</strong></div>
+            <div class="settings-line"><span>Systems</span><strong id="settings-system-count">22 configured through EmulatorJS</strong></div>
             <div class="settings-line"><span>PlayStation controller</span><strong>DualShock profile + analog mode toggle</strong></div>
             <div class="settings-line"><span>GameCube / Wii</span><strong>Experimental browser-engine research; not supported here yet</strong></div>
             <div class="settings-line"><span>Privacy</span><strong>ROM file is not uploaded by this page</strong></div>
@@ -277,19 +277,28 @@
 (() => {
   "use strict";
   const systems = {
-    atari2600: {name:"Atari 2600", icon:"2600", extensions:["a26","bin","rom","zip"], core:"Stella 2014"},
-    atari7800: {name:"Atari 7800", icon:"7800", extensions:["a78","bin","zip"], core:"ProSystem"},
-    nes: {name:"Nintendo Entertainment System", icon:"NES", extensions:["nes","zip"], core:"FCEUmm"},
-    gb: {name:"Game Boy / Game Boy Color", icon:"GB", extensions:["gb","gbc","zip"], core:"Gambatte"},
-    gba: {name:"Game Boy Advance", icon:"GBA", extensions:["gba","zip"], core:"mGBA"},
-    snes: {name:"Super Nintendo", icon:"SNES", extensions:["sfc","smc","zip"], core:"Snes9x"},
-    n64: {name:"Nintendo 64", icon:"N64", extensions:["z64","n64","v64","zip"], core:"Mupen64Plus-Next"},
-    psx: {name:"PlayStation", icon:"PS1", extensions:["chd","pbp","iso","cue","bin","img","mdf","zip"], core:"PCSX-ReARMed"},
-    segaMS: {name:"Sega Master System", icon:"SMS", extensions:["sms","zip"], core:"SMS Plus"},
-    segaGG: {name:"Sega Game Gear", icon:"GG", extensions:["gg","zip"], core:"Genesis Plus GX"},
-    segaMD: {name:"Sega Mega Drive / Genesis", icon:"MD", extensions:["md","gen","bin","zip"], core:"Genesis Plus GX"},
-    vb: {name:"Virtual Boy", icon:"VB", extensions:["vb","vboy","zip"], core:"Beetle VB"},
-    pce: {name:"PC Engine / TurboGrafx-16", icon:"PCE", extensions:["pce","sgx","zip"], core:"Mednafen PCE"}
+    atari2600:{name:"Atari 2600",icon:"🕹️",extensions:["a26","bin","rom","zip"],core:"Stella 2014",art:"atari"},
+    atari7800:{name:"Atari 7800",icon:"🎮",extensions:["a78","bin","zip"],core:"ProSystem",art:"atari"},
+    atariLynx:{name:"Atari Lynx",icon:"🟧",extensions:["lnx","zip"],core:"Handy",art:"atari"},
+    nes:{name:"Nintendo Entertainment System",icon:"🎮",extensions:["nes","zip"],core:"FCEUmm",art:"nintendo"},
+    snes:{name:"Super Nintendo",icon:"🟣",extensions:["sfc","smc","zip"],core:"Snes9x",art:"nintendo"},
+    gb:{name:"Game Boy / Game Boy Color",icon:"🟩",extensions:["gb","gbc","zip"],core:"Gambatte",art:"nintendo"},
+    gba:{name:"Game Boy Advance",icon:"🟪",extensions:["gba","zip"],core:"mGBA",art:"nintendo"},
+    n64:{name:"Nintendo 64",icon:"🎮",extensions:["z64","n64","v64","zip"],core:"Mupen64Plus-Next",art:"nintendo"},
+    nds:{name:"Nintendo DS",icon:"📟",extensions:["nds","zip"],core:"melonDS",art:"nintendo"},
+    psx:{name:"PlayStation",icon:"💿",extensions:["chd","pbp","iso","cue","bin","img","mdf","zip"],core:"PCSX-ReARMed",art:"playstation"},
+    psp:{name:"PlayStation Portable",icon:"🎮",extensions:["iso","cso","pbp","chd"],core:"PPSSPP",art:"playstation"},
+    segaMS:{name:"Sega Master System",icon:"🔵",extensions:["sms","zip"],core:"SMS Plus",art:"sega"},
+    segaGG:{name:"Sega Game Gear",icon:"🟦",extensions:["gg","zip"],core:"Genesis Plus GX",art:"sega"},
+    segaMD:{name:"Sega Mega Drive / Genesis",icon:"🔴",extensions:["md","gen","bin","zip"],core:"Genesis Plus GX",art:"sega"},
+    segaCD:{name:"Sega CD / Mega-CD",icon:"💿",extensions:["chd","cue","bin","iso"],core:"Genesis Plus GX",art:"sega"},
+    sega32x:{name:"Sega 32X",icon:"🔺",extensions:["32x","bin","zip"],core:"PicoDrive",art:"sega"},
+    segaSaturn:{name:"Sega Saturn",icon:"🪐",extensions:["cue","chd","iso","bin"],core:"Beetle Saturn",art:"sega"},
+    dreamcast:{name:"Sega Dreamcast",icon:"💿",extensions:["cdi","gdi","chd","cue","bin"],core:"Flycast",art:"sega"},
+    vb:{name:"Virtual Boy",icon:"🔴",extensions:["vb","vboy","zip"],core:"Beetle VB",art:"nintendo"},
+    pce:{name:"PC Engine / TurboGrafx-16",icon:"🎯",extensions:["pce","sgx","zip"],core:"Mednafen PCE",art:"other"},
+    wonderswan:{name:"WonderSwan / Color",icon:"📱",extensions:["ws","wsc","zip"],core:"Beetle WonderSwan",art:"other"},
+    arcade:{name:"Arcade (FBNeo)",icon:"👾",extensions:["zip"],core:"FinalBurn Neo",art:"arcade"}
   };
   const coreCdn = "https://cdn.emulatorjs.org/stable/data/";
   const $ = (id) => document.getElementById(id);
@@ -320,7 +329,7 @@
         const row = document.createElement("div");
         row.className = "system-card";
         const icon = document.createElement("div");
-        icon.className = "system-icon";
+        icon.className = "system-art " + system.art;
         icon.textContent = system.icon;
         const detail = document.createElement("div");
         const title = document.createElement("strong");
@@ -331,7 +340,7 @@
         detail.append(title, small);
         const button = document.createElement("button");
         button.dataset.pick = id;
-        button.textContent = destination === homeList ? "Select" : "Try";
+        button.textContent = destination === homeList ? "Select" : "Explore";
         row.append(icon, detail, button);
         destination.append(row);
       }
@@ -340,7 +349,7 @@
     $("system-count").textContent = String(Object.keys(systems).length);
     $("settings-system-count").textContent = Object.keys(systems).length + " configured through EmulatorJS";
   }
-  renderSystemCatalog();
+  renderSystemCatalog();\n  loadLibrary();
   let gameEntries = [];
   let launches = 0;
 
@@ -400,12 +409,66 @@
     document.querySelectorAll("[data-view]").forEach(button => button.classList.toggle("active", button.dataset.view === view));
     $("page-title").textContent = titles[view] || titles.overview;
   }
-  function recordEntry(file, systemId) {
-    const exists = gameEntries.some(entry => entry.file === file);
-    if (!exists) gameEntries.unshift({file, systemId, id: ++launches});
-    $("game-count").textContent = String(gameEntries.length);
-    renderLibrary();
+  const LIBRARY_DB = "nvd-emu-library-v1";
+  const LIBRARY_STORE = "games";
+  let libraryDbPromise;
+  function openLibraryDB() {
+    if (!("indexedDB" in window)) return Promise.reject(new Error("Browser storage is unavailable."));
+    if (!libraryDbPromise) libraryDbPromise = new Promise((resolve,reject) => {
+      const request=indexedDB.open(LIBRARY_DB,1);
+      request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains(LIBRARY_STORE))request.result.createObjectStore(LIBRARY_STORE,{keyPath:"key"});};
+      request.onsuccess=()=>resolve(request.result);
+      request.onerror=()=>reject(request.error||new Error("Could not open local library storage."));
+    });
+    return libraryDbPromise;
   }
+  function storageTransaction(mode, action) {
+    return openLibraryDB().then(db=>new Promise((resolve,reject)=>{
+      const tx=db.transaction(LIBRARY_STORE,mode);action(tx.objectStore(LIBRARY_STORE),resolve,reject,tx);
+      tx.onerror=()=>reject(tx.error||new Error("Local library storage failed."));
+      tx.onabort=()=>reject(tx.error||new Error("Local library operation aborted."));
+    }));
+  }
+  async function recordEntry(file,systemId) {
+    const key=systemId+":"+file.name.toLowerCase()+":"+file.size+":"+file.lastModified;
+    try {
+      await storageTransaction("readwrite",(store,resolve)=>{store.put({key,systemId,name:file.name,size:file.size,lastModified:file.lastModified,type:file.type||"application/octet-stream",addedAt:Date.now(),blob:file});});
+      file._libraryKey=key;
+      gameEntries=gameEntries.filter(entry=>entry.key!==key);
+      gameEntries.unshift({key,systemId,name:file.name,size:file.size,file});
+      $("game-count").textContent=String(gameEntries.length);renderLibrary();
+      setStatus("Game saved to this browser's persistent library.","ok");
+    } catch(error) { setStatus("Game selected, but browser storage failed: "+error.message,"error"); }
+  }
+  async function loadLibrary() {
+    try {
+      const records=await storageTransaction("readonly",store=>{});
+    } catch(_) {}
+    try {
+      const records=await new Promise((resolve,reject)=>openLibraryDB().then(db=>{
+        const tx=db.transaction(LIBRARY_STORE,"readonly"),req=tx.objectStore(LIBRARY_STORE).getAll();
+        req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>reject(req.error);
+      },reject));
+      gameEntries=records.filter(r=>systems[r.systemId]&&r.blob instanceof Blob).sort((a,b)=>b.addedAt-a.addedAt).map(r=>{
+        const file=new File([r.blob],r.name,{type:r.type,lastModified:r.lastModified});file._libraryKey=r.key;
+        return {key:r.key,systemId:r.systemId,name:r.name,size:r.size,file};
+      });
+      $("game-count").textContent=String(gameEntries.length);renderLibrary();
+    } catch(error) { setStatus("Persistent library unavailable: "+error.message+". Private browsing may block saved storage.","error"); }
+  }
+  async function removeSavedGame(key) {
+    try {
+      await new Promise((resolve,reject)=>openLibraryDB().then(db=>{
+        const tx=db.transaction(LIBRARY_STORE,"readwrite");tx.objectStore(LIBRARY_STORE).delete(key);
+        tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
+      },reject));
+      gameEntries=gameEntries.filter(entry=>entry.key!==key);
+      if(selectedFile&&selectedFile._libraryKey===key)setSelectedFile(null);
+      $("game-count").textContent=String(gameEntries.length);renderLibrary();
+      setStatus("Removed from the nvd-emu library. The original file on disk is untouched.","ok");
+    } catch(error) { setStatus("Could not remove game: "+error.message,"error"); }
+  }
+  function formatBytes(bytes) { return bytes<1048576?(bytes/1024).toFixed(1)+" KB":(bytes/1048576).toFixed(1)+" MB"; }
   function stableGameID(systemId, fileName) {
     const input = systemId + ":" + fileName.toLowerCase();
     let hash = 2166136261;
@@ -413,31 +476,19 @@
     return (hash >>> 0) & 0x7fffffff || 1;
   }
   function renderLibrary() {
-    const container = $("library-entries");
-    container.replaceChildren();
-    $("empty-library").classList.toggle("hidden", gameEntries.length > 0);
-    for (const entry of gameEntries) {
-      const row = document.createElement("div");
-      row.className = "system-card";
-      const icon = document.createElement("div");
-      icon.className = "system-icon";
-      icon.textContent = entry.file.name.split(".").pop().toUpperCase().slice(0,4);
-      const detail = document.createElement("div");
-      detail.style.minWidth = "0";
-      const title = document.createElement("strong");
-      title.textContent = entry.file.name;
-      const subtitle = document.createElement("small");
-      subtitle.textContent = systems[entry.systemId].name;
-      detail.append(title, subtitle);
-      const play = document.createElement("button");
-      play.textContent = "Play";
-      play.addEventListener("click", () => {
-        chooseSystem(entry.systemId);
-        setSelectedFile(entry.file);
-        launchGame();
-      });
-      row.append(icon, detail, play);
-      container.append(row);
+    const container=$("library-entries");container.replaceChildren();
+    $("empty-library").classList.toggle("hidden",gameEntries.length>0);
+    for(const entry of gameEntries){
+      const system=systems[entry.systemId]||systems.atari2600;
+      const row=document.createElement("div");row.className="system-card";
+      const art=document.createElement("div");art.className="system-art "+system.art;art.textContent=system.icon;
+      const detail=document.createElement("div");detail.style.minWidth="0";detail.style.flex="1";
+      const title=document.createElement("strong");title.textContent=entry.name;
+      const subtitle=document.createElement("small");subtitle.textContent=system.name+" · "+formatBytes(entry.size||0);
+      detail.append(title,subtitle);
+      const play=document.createElement("button");play.textContent="▶ Play";play.addEventListener("click",()=>{chooseSystem(entry.systemId);setSelectedFile(entry.file);launchGame();});
+      const remove=document.createElement("button");remove.textContent="✕";remove.className="subtle";remove.title="Remove game";remove.setAttribute("aria-label","Remove "+entry.name);remove.addEventListener("click",()=>removeSavedGame(entry.key));
+      row.append(art,detail,play,remove);container.append(row);
     }
   }
   // Generates a tiny original 4 KiB Atari 2600 test cartridge in memory.
@@ -572,7 +623,7 @@
 
   fileInput.addEventListener("change", () => {
     const file = fileInput.files && fileInput.files[0];
-    setSelectedFile(file || null);
+    setSelectedFile(file || null);\n    if (file) recordEntry(file, select.value);
   });
   select.addEventListener("change", () => {
     $("test-2600").classList.toggle("hidden", select.value !== "atari2600");

@@ -65,6 +65,21 @@ jobs:
           artwork = Path("docs/artwork.js").read_text(encoding="utf-8")
           if "fallbackLogoSvg" in artwork or "brandNames" in artwork:
               raise SystemExit("Fabricated/generated console-logo fallback code must not be present")
+          if "commons.wikimedia.org/wiki/Special:FilePath/" in artwork:
+              raise SystemExit("Console logo requests must use direct image URLs rather than redirecting file pages")
+          direct_logo_names = set(re.findall(r'^\\s+"([^"]+)": "https://upload\\.wikimedia\\.org/', artwork, flags=re.M))
+          if len(direct_logo_names) < 40:
+              raise SystemExit(f"Expected at least 40 mapped direct logo URLs, found {len(direct_logo_names)}")
+          for catalog_text in (catalog, Path("docs/systems.html").read_text(encoding="utf-8")):
+              for value in re.findall(r'(?:logoFile|brandLogoFile):"([^"]+)"', catalog_text):
+                  if value and not value.startswith(("./", "http://", "https://")) and value not in direct_logo_names:
+                      raise SystemExit(f"Console logo has no direct URL mapping: {value}")
+          default_logos = re.search(r'const defaultBrandLogos = \\{([\\s\\S]*?)\\n  \\};', artwork)
+          if not default_logos:
+              raise SystemExit("Default brand logo mappings are missing")
+          for value in re.findall(r':\\s*"([^"]+)"', default_logos.group(1)):
+              if value and not value.startswith(("./", "http://", "https://")) and value not in direct_logo_names:
+                  raise SystemExit(f"Fallback brand logo has no direct URL mapping: {value}")
           logo_mappings = re.findall(r'logoFile:', catalog)
           if len(logo_mappings) < 36:
               raise SystemExit(f"Expected at least 36 genuine platform-logo mappings, found {len(logo_mappings)}")

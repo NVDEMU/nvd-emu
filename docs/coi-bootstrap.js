@@ -7,7 +7,7 @@
   "use strict";
   const wants3dsIsolation = window.location.pathname.endsWith("/player.html")
     && new URLSearchParams(window.location.search).get("system") === "3ds";
-  const MODE_KEY = "nvd-emu-coi-3ds-reload-v12";
+  const MODE_KEY = "nvd-emu-coi-3ds-reload-v13";
   const sw = navigator.serviceWorker;
 
   if (!wants3dsIsolation) {

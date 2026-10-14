@@ -43,19 +43,25 @@ jobs:
           if manifest.get("name") != "nvd-emu" or manifest.get("start_url") != "./":
               raise SystemExit("The PWA manifest is missing required nvd-emu fields")
           catalog = Path("docs/systems-data.js").read_text(encoding="utf-8")
-          required_systems = ("atari2600", "atari7800", "a5200", "atari800", "jaguar", "nes", "snes", "gba", "n64", "psx", "c64", "coleco", "ngp", "pcfx", "3do", "amiga", "dos")
+          required_systems = ("atari2600", "atari7800", "a5200", "jaguar", "nes", "snes", "gba", "n64", "psx", "c64", "coleco", "ngp", "pcfx", "3do", "amiga", "dos", "pet", "plus4", "fds", "mame", "3ds", "neoGeo", "supergrafx")
           for required in required_systems:
               if required not in catalog:
                   raise SystemExit(f"Missing configured emulator system: {required}")
           configured_systems = re.findall(r'^\s{4}(?:[A-Za-z0-9_]+|"[^"]+"):\{', catalog, flags=re.M)
-          if len(configured_systems) < 34:
-              raise SystemExit(f"Expected at least 34 system mappings, found {len(configured_systems)}")
+          if len(configured_systems) < 40:
+              raise SystemExit(f"Expected at least 40 system mappings, found {len(configured_systems)}")
           for page in ("library.html", "systems.html", "player.html", "settings.html"):
               if not Path("docs", page).is_file():
                   raise SystemExit(f"Missing standalone page: docs/{page}")
-          for asset in ("site.css", "systems-data.js", "artwork.js", "storage.js"):
+          for asset in ("site.css", "systems-data.js", "artwork.js", "storage.js", "coi-bootstrap.js"):
               if not Path("docs", asset).is_file():
                   raise SystemExit(f"Missing shared asset: docs/{asset}")
+          if 'coreChannel:"nightly"' not in catalog or 'threads:true' not in catalog or 'coreId:"3ds"' not in catalog:
+              raise SystemExit("Experimental 3DS nightly core/threading configuration is missing")
+          if 'window.EJS_threads=!!config.threads' not in html:
+              raise SystemExit("The player is not passing the threading option to EmulatorJS")
+          if "Cross-Origin-Embedder-Policy" not in Path("docs/sw.js").read_text(encoding="utf-8"):
+              raise SystemExit("The cross-origin isolation service-worker shim is missing")
           if "function renderSystemCatalog()" not in html:
               raise SystemExit("The dynamic system picker and compatibility list are missing")
           if "wasm-dolphin" not in html or "retail-disc library flow" not in html:
@@ -86,6 +92,9 @@ jobs:
           for script in /tmp/nvd-emu-library-*.js /tmp/nvd-emu-systems-*.js /tmp/nvd-emu-player-*.js /tmp/nvd-emu-settings-*.js; do
             test -f "$script" && node --check "$script"
           done
-          for script in docs/systems-data.js docs/artwork.js docs/storage.js docs/sw.js; do node --check "$script"; done
+          for script in docs/systems-data.js docs/artwork.js docs/storage.js docs/sw.js docs/coi-bootstrap.js; do node --check "$script"; done
+          for logo in arcade atari playstation sega nec commodore; do test -f "docs/assets/logos/$logo.svg"; done
           test -f docs/nvd-emu-logo.svg
           test -f docs/.nojekyll
+          test ! -e CMakeLists.txt
+          test ! -e .github/workflows/build.yml

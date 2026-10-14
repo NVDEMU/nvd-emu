@@ -67,8 +67,8 @@
     }
     if(!supported(selectedFile,system)){setStatus("That file extension doesn't match "+system.name+". Choose the correct system or another file.","error");return;}
     try{
-      await window.NVDLibrary.save(selectedFile,id);
-      setStatus("Game saved to your browser library. Starting "+system.name+"…","ok");
+      const saved=await window.NVDLibrary.save(selectedFile,id);
+      setStatus(saved.alreadyExists?"Game is already in your library. Launching the existing saved entry…":"Game saved to your browser library. Starting "+system.name+"…","ok");
     }catch(error){setStatus("Browser storage couldn't save this ROM ("+error.message+"). Trying to play it for this session…","error");}
     stop();
     $("game-title").textContent=selectedFile.name;
@@ -84,6 +84,12 @@
     frame.onerror=()=>setStatus("The dedicated emulator document could not be loaded.","error");
     frame.src="./emulator.html?system="+encodeURIComponent(id)+"&session="+Date.now();
     setStatus("Loading the dedicated emulator document for "+system.name+".");
+    setTimeout(()=>{
+      const current=$("player-status").textContent;
+      if(!frame.classList.contains("hidden")&&current.startsWith("Loading the dedicated emulator document")){
+        setStatus("The emulator document did not report that it loaded. The service worker, school network, or browser may be blocking the player page.", "error");
+      }
+    },12000);
 
   }
   select.addEventListener("change",syncSystem);

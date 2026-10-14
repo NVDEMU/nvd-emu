@@ -15,7 +15,7 @@ const isolationPolicy = webKitBrowser ? "require-corp" : "credentialless";
 function is3dsPlayerNavigation(request) {
   if (!request || request.mode !== "navigate") return false;
   const url = new URL(request.url);
-  return url.pathname.endsWith("/player.html") && url.searchParams.get("system") === "3ds";
+  return (url.pathname.endsWith("/player.html") || url.pathname.endsWith("/emulator.html")) && url.searchParams.get("system") === "3ds";
 }
 
 function addIsolationHeaders(response, request) {

@@ -6,7 +6,7 @@ The native Qt/C++ desktop frontend is an early foundation. For an immediately us
 
 ## Play without installing a Mac app
 
-The browser edition lives in [`docs/`](docs/). Once GitHub Pages is enabled for this repository (Settings → Pages → Build and deployment → Source: **GitHub Actions**), the [Pages workflow](.github/workflows/pages.yml) publishes it automatically. Then open the GitHub Pages URL in Safari, Chrome, or Edge. On macOS Safari, use File → Add to Dock to make it act like an app; there is no Terminal, DMG, or Gatekeeper dialog.
+The browser edition lives in [`docs/`](docs/). One-time setup is required: open [Settings → Pages](https://github.com/NVDEMU/nvd-emu/settings/pages), set **Build and deployment → Source** to **GitHub Actions**, and save. The [Pages workflow](.github/workflows/pages.yml) then deploys the site automatically to [https://nvdemu.github.io/nvd-emu/](https://nvdemu.github.io/nvd-emu/). Open it in Safari, Chrome, or Edge. On macOS Safari, use File → Add to Dock to make it act like an app; there is no Terminal, DMG, or Gatekeeper dialog.
 
 **First system: Atari 2600.** The web frontend loads the Stella 2014 core via EmulatorJS. The selector also wires NES, Game Boy/Color, Game Boy Advance, SNES, Sega Master System, and Mega Drive/Genesis. These mappings are a starting compatibility surface, not a claim that every ROM has been tested.
 

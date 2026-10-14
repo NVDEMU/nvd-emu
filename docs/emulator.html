@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <title>NVD-EMU Emulator Frame</title>
+  <style>
+    :root{color-scheme:dark;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;height:100%;min-height:320px;background:#08090b;color:#f5f5f7}
+    body{overflow:hidden}
+    #game{width:100%;height:100%;min-height:320px}
+    #frame-status{position:fixed;left:8px;right:8px;bottom:8px;z-index:20;padding:7px 10px;border:1px solid #333641;border-radius:7px;background:rgba(17,18,22,.92);color:#bfc2cc;font-size:11px;line-height:1.45;overflow-wrap:anywhere;pointer-events:none}
+    #frame-status.error{color:#ffaaa9;border-color:#824347}
+    #frame-status:empty{display:none}
+  </style>
+</head>
+<body>
+  <div id="game"></div>
+  <div id="frame-status" role="status" aria-live="polite">Waiting for NVD-EMU to send the game…</div>
+  <script>
+  (() => {
+    "use strict";
+    const status = document.getElementById("frame-status");
+    let readyReported = false;
+    let startReported = false;
+    let romUrl = "";
+    let biosUrl = "";
+    function report(stage, detail) {
+      const text = String(detail || "");
+      status.textContent = stage + (text ? ": " + text : "");
+      status.className = /error|timeout/i.test(stage) ? "error" : "";
+      try { parent.postMessage({ nvdEmu: true, stage, detail: text }, location.origin); } catch (_) {}
+    }
+    window.addEventListener("error", event => {
+      const target = event.target;
+      const scriptError = target && target.tagName === "SCRIPT";
+      report(scriptError ? "loader-error" : "runtime-error",
+        scriptError ? "Script resource failed: " + (target.src || "unknown URL") : (event.message || "Unknown JavaScript error"));
+    }, true);
+    window.addEventListener("unhandledrejection", event => {
+      const reason = event.reason;
+      report("promise-error", reason && reason.message ? reason.message : String(reason || "Unhandled promise rejection"));
+    });
+    window.addEventListener("message", event => {
+      if (event.source !== parent || event.origin !== location.origin ||
+          !event.data || event.data.nvdEmuLaunch !== true || !event.data.config) return;
+      start(event.data.config);
+    });
+    function start(config) {
+      if (!config || !config.dataPath || !config.core || !config.romFile) {
+        report("config-error", "The game configuration or ROM file was not received.");
+        return;
+      }
+      report("frame-ready", "crossOriginIsolated=" + window.crossOriginIsolated +
+        "; SharedArrayBuffer=" + (typeof SharedArrayBuffer) +
+        "; core=" + config.core + "; data=" + config.dataPath);
+      if (config.threads && (window.crossOriginIsolated !== true || typeof SharedArrayBuffer !== "function")) {
+        report("isolation-error", "The emulator document itself is not cross-origin isolated; threaded Azahar cannot start.");
+        return;
+      }
+      try {
+        romUrl = URL.createObjectURL(config.romFile);
+        if (config.biosFile) biosUrl = URL.createObjectURL(config.biosFile);
+        window.EJS_player = "#game";
+        window.EJS_core = config.core;
+        window.EJS_gameUrl = romUrl;
+        window.EJS_gameName = config.name || config.romFile.name || "Game";
+        window.EJS_pathtodata = config.dataPath;
+        window.EJS_threads = config.threads === true;
+        window.EJS_color = "#dc292b";
+        window.EJS_startOnLoaded = true;
+        window.EJS_gameID = config.gameID;
+        window.EJS_biosUrl = biosUrl;
+        window.EJS_volume = 0.8;
+        window.EJS_language = "en-US";
+        window.EJS_defaultOptions = config.core === "psx"
+          ? { "save-state-location": "browser", "save-state-slot": 0, "pcsx_rearmed_pad1type": "dualshock",
+              "pcsx_rearmed_bios": "auto", "pcsx_rearmed_analog_combo": "l1+r1+select" }
+          : { "save-state-location": "browser", "save-state-slot": 0 };
+        window.EJS_Buttons = {
+          playPause: true, restart: true, mute: true, settings: true, fullscreen: true,
+          saveState: true, loadState: true, gamepad: true, volume: true,
+          saveSavFiles: true, loadSavFiles: true, quickSave: true, quickLoad: true,
+          screenshot: true, cacheManager: true, exitEmulation: true
+        };
+        window.EJS_ready = function() {
+          readyReported = true;
+          report("ready", "EmulatorJS reports initialization complete.");
+        };
+        window.EJS_onGameStart = function() {
+          startReported = true;
+          report("game-started", "EmulatorJS reports that the core started the game.");
+        };
+        report("loader-starting", "Loading " + config.dataPath + "loader.js");
+        const loader = document.createElement("script");
+        loader.src = config.dataPath + "loader.js";
+        loader.crossOrigin = "anonymous";
+        loader.onload = () => report("loader-loaded", "loader.js downloaded and executed.");
+        loader.onerror = () => report("loader-error", "Could not download " + loader.src);
+        document.head.appendChild(loader);
+        setTimeout(() => {
+          if (!readyReported && !startReported) {
+            report("core-timeout", "No EmulatorJS ready/game-start callback. Check the core/WASM network requests and browser console.");
+          }
+        }, 45000);
+      } catch (error) {
+        report("runtime-error", error && error.message ? error.message : String(error));
+      }
+    }
+    window.addEventListener("beforeunload", () => {
+      if (romUrl) URL.revokeObjectURL(romUrl);
+      if (biosUrl) URL.revokeObjectURL(biosUrl);
+    });
+    window.parent.postMessage({ nvdEmu: true, stage: "document-loaded", detail:
+      "Emulator frame loaded; awaiting launch config. crossOriginIsolated=" + window.crossOriginIsolated }, location.origin);
+  })();
+  </script>
+</body>
+</html>

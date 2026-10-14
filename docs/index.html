@@ -145,7 +145,7 @@
         <div class="hero">
           <div class="eyebrow" style="color:#ff8587;margin-bottom:12px">RETRO GAMING, REIMAGINED</div>
           <h1 style="font-size:clamp(25px,3.4vw,42px);max-width:660px">One library. Multiple systems. Your games.</h1>
-          <p>Start with the Atari 2600, then explore more classic systems. Load a game file you already have, press play, and keep playing right here.</p>
+          <p>Play 13 classic systems in one browser library, including NES, SNES, Nintendo 64 and PlayStation. Load a game file you already have, press play, and keep playing right here.</p>
           <div class="hero-actions">
             <button class="primary" id="hero-load">＋ &nbsp; Load a game</button>
             <button id="hero-systems">Explore systems</button>
@@ -153,7 +153,7 @@
         </div>
 
         <div class="metrics">
-          <div class="metric"><div class="label">SYSTEMS CONFIGURED</div><div class="value">7</div></div>
+          <div class="metric"><div class="label">SYSTEMS CONFIGURED</div><div class="value" id="system-count">13</div></div>
           <div class="metric"><div class="label">GAMES IN THIS SESSION</div><div class="value" id="game-count">0</div></div>
           <div class="metric"><div class="label">ROM UPLOADS</div><div class="value">0</div><div class="muted" style="font-size:10px;margin-top:4px">Files stay local</div></div>
         </div>
@@ -164,15 +164,14 @@
             <div class="card-body">
               <div class="field">
                 <label class="title" for="system">Choose a system</label>
-                <select id="system">
-                  <option value="atari2600">Atari 2600</option>
-                  <option value="nes">Nintendo Entertainment System</option>
-                  <option value="gb">Game Boy / Game Boy Color</option>
-                  <option value="gba">Game Boy Advance</option>
-                  <option value="snes">Super Nintendo</option>
-                  <option value="segaMS">Sega Master System</option>
-                  <option value="segaMD">Sega Mega Drive / Genesis</option>
-                </select>
+                <select id="system"></select>
+              </div>
+              <div class="field hidden" id="psx-bios-field">
+                <label class="title" for="psx-bios-file">Optional PlayStation BIOS</label>
+                <p style="font-size:11px;margin:0 0 9px">nvd-emu includes no BIOS. PS1 games can try the core's HLE fallback without one; a compatible BIOS dumped from your own console may improve boot or regional compatibility for some games.</p>
+                <input id="psx-bios-file" type="file" accept=".bin,.rom">
+                <label class="file-label" for="psx-bios-file">Choose BIOS file (optional)</label>
+                <div id="psx-bios-selected" class="selected-file hidden"><span>BIOS</span><span id="psx-bios-name" class="name"></span><button id="clear-psx-bios" class="subtle" style="padding:5px 8px" type="button">×</button></div>
               </div>
               <div class="drop" id="drop-zone">
                 <div class="upload">↥</div>
@@ -180,7 +179,7 @@
                 <span>or browse for a ROM you own</span>
                 <label class="file-label" for="rom-file">Browse files</label>
                 <button id="test-2600" class="subtle" type="button" style="margin-top:8px;font-size:11px">Run built-in Atari 2600 color test · no ROM needed</button>
-                <input id="rom-file" type="file" accept=".a26,.bin,.rom,.nes,.gb,.gbc,.gba,.sfc,.smc,.sms,.md,.gen,.zip">
+                <input id="rom-file" type="file" accept=".a26,.a78,.bin,.rom,.nes,.gb,.gbc,.gba,.sfc,.smc,.sms,.gg,.md,.gen,.n64,.z64,.v64,.chd,.pbp,.iso,.cue,.img,.mdf,.vb,.vboy,.pce,.sgx,.zip">
               </div>
               <div id="selected-file" class="selected-file hidden"><span>▣</span><span id="file-name" class="name"></span><button id="clear-file" class="subtle" style="padding:5px 8px">×</button></div>
               <button id="play-button" class="primary" disabled style="width:100%;margin-top:14px">Play game</button>
@@ -190,12 +189,7 @@
 
           <section class="card">
             <div class="card-head"><h2>Available systems</h2><button class="subtle" id="view-all-systems" style="padding:7px 9px;font-size:11px">View all</button></div>
-            <div class="card-body" id="system-list">
-              <div class="system-card"><div class="system-icon">2600</div><div><strong>Atari 2600</strong><small>Stella 2014 core · .a26 / .bin</small></div><button data-pick="atari2600">Select</button></div>
-              <div class="system-card"><div class="system-icon">NES</div><div><strong>Nintendo Entertainment System</strong><small>FCEUmm core · .nes</small></div><button data-pick="nes">Select</button></div>
-              <div class="system-card"><div class="system-icon">GB</div><div><strong>Game Boy / Color</strong><small>Gambatte core · .gb / .gbc</small><button data-pick="gb">Select</button></div></div>
-              <div class="system-card"><div class="system-icon">GBA</div><div><strong>Game Boy Advance</strong><small>mGBA core · .gba</small><button data-pick="gba">Select</button></div></div>
-            </div>
+            <div class="card-body" id="system-list"></div>
           </section>
         </div>
       </section>
@@ -216,19 +210,13 @@
           <div class="card-head"><h2>System compatibility</h2><span class="eyebrow">WEB PREVIEW</span></div>
           <div class="card-body">
             <p>These systems are wired to EmulatorJS cores. Actual game compatibility varies by ROM, mapper, browser, and core version; nvd-emu hasn't run a full compatibility test suite yet.</p>
-            <div class="system-card"><div class="system-icon">2600</div><div><strong>Atari 2600</strong><small>Stella 2014 · local .a26, .bin and .rom files</small></div><button data-pick="atari2600">Try</button></div>
-            <div class="system-card"><div class="system-icon">NES</div><div><strong>Nintendo Entertainment System</strong><small>FCEUmm · .nes files</small></div><button data-pick="nes">Try</button></div>
-            <div class="system-card"><div class="system-icon">GB</div><div><strong>Game Boy / Game Boy Color</strong><small>Gambatte · .gb and .gbc files</small></div><button data-pick="gb">Try</button></div>
-            <div class="system-card"><div class="system-icon">GBA</div><div><strong>Game Boy Advance</strong><small>mGBA · .gba files</small><button data-pick="gba">Try</button></div></div>
-            <div class="system-card"><div class="system-icon">SNES</div><div><strong>Super Nintendo</strong><small>Snes9x · .sfc and .smc files</small><button data-pick="snes">Try</button></div></div>
-            <div class="system-card"><div class="system-icon">SMS</div><div><strong>Sega Master System</strong><small>SMS Plus · .sms files</small><button data-pick="segaMS">Try</button></div></div>
-            <div class="system-card"><div class="system-icon">MD</div><div><strong>Sega Mega Drive / Genesis</strong><small>Genesis Plus GX · .md, .gen and .bin files</small></div><button data-pick="segaMD">Try</button></div>
+            <div id="compatibility-list"></div>
           </div>
         </section>
         <section class="card" style="margin-top:16px">
           <div class="card-head"><h2>GameCube &amp; Wii · experimental research</h2><span class="pill">WASM / NOT INTEGRATED</span></div>
           <div class="card-body">
-            <p>These systems are not playable inside nvd-emu Web yet. They require a much heavier PowerPC, graphics, audio and (for Wii) motion/controller runtime; the current EmulatorJS core catalogue does not offer a ready-to-use Dolphin Wii/GameCube core.</p>
+            <p>These systems are not playable inside nvd-emu Web yet. RetroArch’s Dolphin core is not a drop-in browser core: Libretro lists it as unavailable for web due to extremely poor performance. A browser port needs a WebAssembly CPU recompiler, graphics backend, audio timing and (for Wii) motion/controller runtime.</p>
             <p>A separate open-source project, Gecko, has an early WebAssembly frontend, so a browser-based path is technically possible. Its current web code appears to initialize the GameCube implementation, and the public page asks for an IPL/DOL file and DSP IROM. Wii browser support would require separate integration work. This is not yet a polished, retail-disc Wii/GameCube experience.</p>
             <div class="system-card"><div class="system-icon">GC</div><div><strong>Nintendo GameCube</strong><small>Research target · ISO/RVZ loading, graphics/audio, controller map and savestates need integration and validation.</small></div><a class="file-label" href="https://gecko.layle.dev/" target="_blank" rel="noreferrer">Explore test</a></div>
             <div class="system-card"><div class="system-icon">Wii</div><div><strong>Nintendo Wii</strong><small>Research target · add Wiimote motion, pointer, extensions and sensor emulation.</small></div><a class="file-label" href="https://github.com/Torashi1069/emu.nintendo.wii.gecko" target="_blank" rel="noreferrer">Engine source</a></div>
@@ -246,6 +234,8 @@
             <div class="settings-line"><span>Emulation engine</span><strong>EmulatorJS / libretro cores</strong></div>
             <div class="settings-line"><span>Save states</span><strong>Save/Load + quick slots in emulator toolbar</strong></div>
             <div class="settings-line"><span>Control remapping</span><strong>Keyboard + supported gamepads from toolbar settings</strong></div>
+            <div class="settings-line"><span>Systems</span><strong id="settings-system-count">13 configured through EmulatorJS</strong></div>
+            <div class="settings-line"><span>PlayStation controller</span><strong>DualShock profile + analog mode toggle</strong></div>
             <div class="settings-line"><span>GameCube / Wii</span><strong>Experimental browser-engine research; not supported here yet</strong></div>
             <div class="settings-line"><span>Privacy</span><strong>ROM file is not uploaded by this page</strong></div>
             <p>The emulator core files are fetched from <a href="https://cdn.emulatorjs.org/stable/data/" target="_blank" rel="noreferrer" style="color:#ff8587">EmulatorJS's stable CDN</a> when you launch a game. This means the browser edition needs an internet connection for the core download.</p>
@@ -269,8 +259,9 @@
             <span class="pill">↧ Save state</span>
             <span class="pill">↥ Load state</span>
             <span class="pill">⚡ Quick save/load</span>
+            <span class="pill">🎮 DualShock analog sticks</span>
           </div>
-          <p style="margin:0;font-size:12px">Use the emulator toolbar inside the game window: open the gamepad/controller settings to remap keys and buttons, and use Save State / Load State or Quick Save / Quick Load to preserve progress. State compatibility and browser persistence depend on the selected core; keep an exported save-state file for important progress.</p>
+          <p style="margin:0;font-size:12px">Use the emulator toolbar inside the game window to remap keyboard keys and physical gamepad buttons/axes, and use Save State / Load State or Quick Save / Quick Load to preserve progress. PlayStation defaults to PCSX-ReARMed with a DualShock controller profile and HLE BIOS fallback; connect a browser-detected controller and map both sticks in controller settings. Some PS1 games also need analog mode switched on with L1 + R1 + Select. BIOS-free boot and game compatibility vary by title and region. Browser persistence depends on the core and can be cleared by the browser, so export important saves.</p>
         </div>
         <div class="status" id="player-status"><span class="dot" style="background:#9799a4"></span><span id="status-text">Ready for a game file. No ROMs have been loaded.</span></div>
       </section>
@@ -285,23 +276,70 @@
 (() => {
   "use strict";
   const systems = {
-    atari2600: {name:"Atari 2600", extensions:["a26","bin","rom","zip"], core:"Stella 2014"},
-    nes: {name:"Nintendo Entertainment System", extensions:["nes","zip"], core:"FCEUmm"},
-    gb: {name:"Game Boy / Game Boy Color", extensions:["gb","gbc","zip"], core:"Gambatte"},
-    gba: {name:"Game Boy Advance", extensions:["gba","zip"], core:"mGBA"},
-    snes: {name:"Super Nintendo", extensions:["sfc","smc","zip"], core:"Snes9x"},
-    segaMS: {name:"Sega Master System", extensions:["sms","zip"], core:"SMS Plus"},
-    segaMD: {name:"Sega Mega Drive / Genesis", extensions:["md","gen","bin","zip"], core:"Genesis Plus GX"}
+    atari2600: {name:"Atari 2600", icon:"2600", extensions:["a26","bin","rom","zip"], core:"Stella 2014"},
+    atari7800: {name:"Atari 7800", icon:"7800", extensions:["a78","bin","zip"], core:"ProSystem"},
+    nes: {name:"Nintendo Entertainment System", icon:"NES", extensions:["nes","zip"], core:"FCEUmm"},
+    gb: {name:"Game Boy / Game Boy Color", icon:"GB", extensions:["gb","gbc","zip"], core:"Gambatte"},
+    gba: {name:"Game Boy Advance", icon:"GBA", extensions:["gba","zip"], core:"mGBA"},
+    snes: {name:"Super Nintendo", icon:"SNES", extensions:["sfc","smc","zip"], core:"Snes9x"},
+    n64: {name:"Nintendo 64", icon:"N64", extensions:["z64","n64","v64","zip"], core:"Mupen64Plus-Next"},
+    psx: {name:"PlayStation", icon:"PS1", extensions:["chd","pbp","iso","cue","bin","img","mdf","zip"], core:"PCSX-ReARMed · HLE fallback"},
+    segaMS: {name:"Sega Master System", icon:"SMS", extensions:["sms","zip"], core:"SMS Plus"},
+    segaGG: {name:"Sega Game Gear", icon:"GG", extensions:["gg","zip"], core:"Genesis Plus GX"},
+    segaMD: {name:"Sega Mega Drive / Genesis", icon:"MD", extensions:["md","gen","bin","zip"], core:"Genesis Plus GX"},
+    vb: {name:"Virtual Boy", icon:"VB", extensions:["vb","vboy","zip"], core:"Beetle VB"},
+    pce: {name:"PC Engine / TurboGrafx-16", icon:"PCE", extensions:["pce","sgx","zip"], core:"Mednafen PCE"}
   };
   const coreCdn = "https://cdn.emulatorjs.org/stable/data/";
   const $ = (id) => document.getElementById(id);
   const fileInput = $("rom-file");
+  const biosFileInput = $("psx-bios-file");
   const select = $("system");
   const playButton = $("play-button");
   const dropZone = $("drop-zone");
   const selectedFileBox = $("selected-file");
   let selectedFile = null;
+  let selectedBiosFile = null;
   let activeBlobUrl = null;
+  let activeBiosBlobUrl = null;
+
+  function renderSystemCatalog() {
+    const previous = select.value || "atari2600";
+    select.replaceChildren();
+    const homeList = $("system-list");
+    const compatibilityList = $("compatibility-list");
+    homeList.replaceChildren();
+    compatibilityList.replaceChildren();
+    for (const [id, system] of Object.entries(systems)) {
+      const option = document.createElement("option");
+      option.value = id;
+      option.textContent = system.name;
+      select.append(option);
+      for (const destination of [homeList, compatibilityList]) {
+        const row = document.createElement("div");
+        row.className = "system-card";
+        const icon = document.createElement("div");
+        icon.className = "system-icon";
+        icon.textContent = system.icon;
+        const detail = document.createElement("div");
+        const title = document.createElement("strong");
+        title.textContent = system.name;
+        const small = document.createElement("small");
+        const extensions = system.extensions.filter(ext => ext !== "zip").map(ext => "." + ext).join(" / ");
+        small.textContent = system.core + " core · " + extensions;
+        detail.append(title, small);
+        const button = document.createElement("button");
+        button.dataset.pick = id;
+        button.textContent = destination === homeList ? "Select" : "Try";
+        row.append(icon, detail, button);
+        destination.append(row);
+      }
+    }
+    select.value = systems[previous] ? previous : "atari2600";
+    $("system-count").textContent = String(Object.keys(systems).length);
+    $("settings-system-count").textContent = Object.keys(systems).length + " configured through EmulatorJS";
+  }
+  renderSystemCatalog();
   let gameEntries = [];
   let launches = 0;
 
@@ -339,6 +377,7 @@
     if (!systems[id]) return;
     select.value = id;
     $("test-2600").classList.toggle("hidden", id !== "atari2600");
+    $("psx-bios-field").classList.toggle("hidden", id !== "psx");
     if (selectedFile) setSelectedFile(selectedFile);
     $("view-overview").classList.remove("hidden");
     setView("overview");
@@ -365,6 +404,12 @@
     if (!exists) gameEntries.unshift({file, systemId, id: ++launches});
     $("game-count").textContent = String(gameEntries.length);
     renderLibrary();
+  }
+  function stableGameID(systemId, fileName) {
+    const input = systemId + ":" + fileName.toLowerCase();
+    let hash = 2166136261;
+    for (let i = 0; i < input.length; i++) hash = Math.imul(hash ^ input.charCodeAt(i), 16777619);
+    return (hash >>> 0) & 0x7fffffff || 1;
   }
   function renderLibrary() {
     const container = $("library-entries");
@@ -467,6 +512,7 @@
 
   function runBuiltInAtariTest() {
     select.value = "atari2600";
+    $("psx-bios-field").classList.add("hidden");
     setSelectedFile(makeAtari2600TestCartridge());
     setStatus("Created a tiny original Atari 2600 diagnostic cartridge locally; no game ROM was downloaded.");
     launchGame();
@@ -480,6 +526,10 @@
     if (activeBlobUrl) {
       URL.revokeObjectURL(activeBlobUrl);
       activeBlobUrl = null;
+    }
+    if (activeBiosBlobUrl) {
+      URL.revokeObjectURL(activeBiosBlobUrl);
+      activeBiosBlobUrl = null;
     }
     setStatus(message);
   }
@@ -495,6 +545,7 @@
     stopGame("Starting emulator engine…");
     const chosen = systems[select.value];
     activeBlobUrl = URL.createObjectURL(selectedFile);
+    if (select.value === "psx" && selectedBiosFile) activeBiosBlobUrl = URL.createObjectURL(selectedBiosFile);
     $("player-title").textContent = selectedFile.name;
     $("player-meta").textContent = chosen.name + " · " + chosen.core + " core";
     $("player-placeholder").classList.add("hidden");
@@ -504,10 +555,12 @@
     const config = {
       core: select.value,
       romUrl: activeBlobUrl,
-      name: selectedFile.name
+      name: selectedFile.name,
+      gameID: stableGameID(select.value, selectedFile.name),
+      biosUrl: activeBiosBlobUrl || ""
     };
     const safeJson = JSON.stringify(config).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
-    frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;background:#08090b;color:white;height:100%;font-family:system-ui,sans-serif}#game{width:100%;height:100%;min-height:320px}body{overflow:hidden}</style></head><body><div id="game"></div><script>const config=${safeJson};window.EJS_player="#game";window.EJS_core=config.core;window.EJS_gameUrl=config.romUrl;window.EJS_gameName=config.name;window.EJS_pathtodata=${JSON.stringify(coreCdn)};window.EJS_color="#dc292b";window.EJS_startOnLoaded=true;window.EJS_volume=0.8;window.EJS_language="en-US";window.EJS_Buttons={playPause:true,restart:true,mute:true,settings:true,fullscreen:true,saveState:true,loadState:true,gamepad:true,volume:true,saveSavFiles:true,loadSavFiles:true,quickSave:true,quickLoad:true,screenshot:true,cacheManager:true,exitEmulation:true};window.EJS_defaultOptions={"save-state-location":"browser","save-state-slot":0};<\/script><script src="https://cdn.emulatorjs.org/stable/data/loader.js"><\/script></body></html>`;
+    frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;background:#08090b;color:white;height:100%;font-family:system-ui,sans-serif}#game{width:100%;height:100%;min-height:320px}body{overflow:hidden}</style></head><body><div id="game"></div><script>const config=${safeJson};window.EJS_player="#game";window.EJS_core=config.core;window.EJS_gameUrl=config.romUrl;window.EJS_gameName=config.name;window.EJS_pathtodata=${JSON.stringify(coreCdn)};window.EJS_color="#dc292b";window.EJS_startOnLoaded=true;window.EJS_gameID=config.gameID;window.EJS_biosUrl=config.biosUrl||"";window.EJS_volume=0.8;window.EJS_language="en-US";window.EJS_defaultOptions=config.core==="psx"?{"save-state-location":"browser","save-state-slot":0,"pcsx_rearmed_pad1type":"dualshock","pcsx_rearmed_bios":"auto","pcsx_rearmed_analog_combo":"l1+r1+select"}:{"save-state-location":"browser","save-state-slot":0};window.EJS_Buttons={playPause:true,restart:true,mute:true,settings:true,fullscreen:true,saveState:true,loadState:true,gamepad:true,volume:true,saveSavFiles:true,loadSavFiles:true,quickSave:true,quickLoad:true,screenshot:true,cacheManager:true,exitEmulation:true};<\/script><script src="https://cdn.emulatorjs.org/stable/data/loader.js"><\/script></body></html>`;
     setStatus("Loading " + chosen.name + " core from EmulatorJS. ROM file remains local.");
     recordEntry(selectedFile, select.value);
     $("player-section").scrollIntoView({behavior:"smooth",block:"start"});
@@ -522,7 +575,20 @@
   });
   select.addEventListener("change", () => {
     $("test-2600").classList.toggle("hidden", select.value !== "atari2600");
+    $("psx-bios-field").classList.toggle("hidden", select.value !== "psx");
     if (selectedFile) setSelectedFile(selectedFile);
+  });
+  biosFileInput.addEventListener("change", () => {
+    selectedBiosFile = biosFileInput.files && biosFileInput.files[0] || null;
+    $("psx-bios-selected").classList.toggle("hidden", !selectedBiosFile);
+    $("psx-bios-name").textContent = selectedBiosFile ? selectedBiosFile.name : "";
+    if (selectedBiosFile) setStatus("Optional PS1 BIOS selected locally; it will not be uploaded to nvd-emu.");
+  });
+  $("clear-psx-bios").addEventListener("click", () => {
+    biosFileInput.value = "";
+    selectedBiosFile = null;
+    $("psx-bios-selected").classList.add("hidden");
+    $("psx-bios-name").textContent = "";
   });
   $("test-2600").addEventListener("click", runBuiltInAtariTest);
   playButton.addEventListener("click", launchGame);

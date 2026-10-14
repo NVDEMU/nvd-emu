@@ -179,6 +179,7 @@
                 <strong>Drop your game file here</strong>
                 <span>or browse for a ROM you own</span>
                 <label class="file-label" for="rom-file">Browse files</label>
+                <button id="test-2600" class="subtle" type="button" style="margin-top:8px;font-size:11px">Run built-in Atari 2600 color test · no ROM needed</button>
                 <input id="rom-file" type="file" accept=".a26,.bin,.rom,.nes,.gb,.gbc,.gba,.sfc,.smc,.sms,.md,.gen,.zip">
               </div>
               <div id="selected-file" class="selected-file hidden"><span>▣</span><span id="file-name" class="name"></span><button id="clear-file" class="subtle" style="padding:5px 8px">×</button></div>
@@ -369,6 +370,84 @@
       container.append(row);
     }
   }
+  // Generates a tiny original 4 KiB Atari 2600 test cartridge in memory.
+  // It draws a full-screen background and shifts its color each frame, exercising
+  // the CPU, TIA registers, RIOT RAM, WSYNC timing, and reset vector without a ROM download.
+  function makeAtari2600TestCartridge() {
+    const code = [];
+    const labels = Object.create(null);
+    const fixups = [];
+    const emit = (...bytes) => code.push(...bytes);
+    const mark = name => { labels[name] = code.length; };
+    const branchNotEqual = name => {
+      code.push(0xD0, 0x00);
+      fixups.push({ kind: "relative", at: code.length - 1, target: name });
+    };
+    const jump = name => {
+      code.push(0x4C, 0x00, 0x00);
+      fixups.push({ kind: "absolute", at: code.length - 2, target: name });
+    };
+
+    // Initialize CPU state and a color byte in RIOT RAM at $80.
+    emit(0x78, 0xD8);                         // SEI; CLD
+    emit(0xA9, 0x42, 0x85, 0x80);             // LDA #$42; STA $80
+
+    mark("vsync");
+    emit(0xA9, 0x02, 0x85, 0x00);             // VSYNC on
+    emit(0x85, 0x02, 0x85, 0x02, 0x85, 0x02); // 3 scan lines
+    emit(0xA9, 0x00, 0x85, 0x00);             // VSYNC off
+    emit(0xA9, 0x02, 0x85, 0x01);             // VBLANK on
+    emit(0xA0, 0x25);                         // LDY #37
+    mark("verticalBlank");
+    emit(0x85, 0x02, 0x88);                  // STA WSYNC; DEY
+    branchNotEqual("verticalBlank");
+    emit(0xA9, 0x00, 0x85, 0x01);             // VBLANK off
+
+    mark("visible");
+    emit(0xA5, 0x80, 0x85, 0x09, 0xA0, 0xC0); // read color, set COLUBK, 192 lines
+    mark("visibleLine");
+    emit(0x85, 0x02, 0x88);                  // one WSYNC per scan line
+    branchNotEqual("visibleLine");
+    emit(0xE6, 0x80);                         // INC color for next frame
+    emit(0xA9, 0x02, 0x85, 0x01, 0xA0, 0x1E); // VBLANK on; 30-line overscan
+    mark("overscan");
+    emit(0x85, 0x02, 0x88);
+    branchNotEqual("overscan");
+    jump("vsync");
+
+    for (const fixup of fixups) {
+      const target = labels[fixup.target];
+      if (target === undefined) throw new Error("Bad test cartridge label: " + fixup.target);
+      if (fixup.kind === "relative") {
+        const offset = target - (fixup.at + 1);
+        if (offset < -128 || offset > 127) throw new Error("Test cartridge branch is out of range");
+        code[fixup.at] = offset & 0xFF;
+      } else {
+        const address = 0xF000 + target;
+        code[fixup.at] = address & 0xFF;
+        code[fixup.at + 1] = (address >>> 8) & 0xFF;
+      }
+    }
+
+    if (code.length > 0xFFC) throw new Error("Test cartridge program is too large");
+    const rom = new Uint8Array(4096);
+    rom.fill(0xEA); // unused cartridge bytes: NOP
+    rom.set(code, 0);
+    // The cartridge maps at $F000-$FFFF; reset/IRQ/NMI vectors point to $F000.
+    for (const vector of [0xFFA, 0xFFC, 0xFFE]) {
+      rom[vector] = 0x00;
+      rom[vector + 1] = 0xF0;
+    }
+    return new File([rom], "nvd-emu-atari2600-color-test.a26", { type: "application/octet-stream" });
+  }
+
+  function runBuiltInAtariTest() {
+    select.value = "atari2600";
+    setSelectedFile(makeAtari2600TestCartridge());
+    setStatus("Created a tiny original Atari 2600 diagnostic cartridge locally; no game ROM was downloaded.");
+    launchGame();
+  }
+
   function stopGame(message = "Game stopped.") {
     $("player-frame").srcdoc = "";
     $("player-frame").classList.add("hidden");
@@ -418,8 +497,10 @@
     setSelectedFile(file || null);
   });
   select.addEventListener("change", () => {
+    $("test-2600").classList.toggle("hidden", select.value !== "atari2600");
     if (selectedFile) setSelectedFile(selectedFile);
   });
+  $("test-2600").addEventListener("click", runBuiltInAtariTest);
   playButton.addEventListener("click", launchGame);
   $("clear-file").addEventListener("click", () => { fileInput.value = ""; setSelectedFile(null); });
   $("stop-button").addEventListener("click", () => stopGame());

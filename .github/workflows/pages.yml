@@ -65,6 +65,8 @@ jobs:
           player_page = Path("docs/player.html").read_text(encoding="utf-8")
           if "window.EJS_ready=function()" not in player_page or "window.EJS_onGameStart=function()" not in player_page:
               raise SystemExit("The player must report EmulatorJS ready/game-start events for black-screen diagnostics")
+          if 'window.__nvdReport("isolation-error"' not in player_page:
+              raise SystemExit("The player must verify SharedArrayBuffer inside the threaded emulator frame")
           if "No game-start confirmation after 45 seconds" not in player_page:
               raise SystemExit("The player must report stalled emulator initialization instead of leaving a silent black screen")
           if "Cross-Origin-Embedder-Policy" not in Path("docs/sw.js").read_text(encoding="utf-8"):

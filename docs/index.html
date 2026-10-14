@@ -217,9 +217,10 @@
           <div class="card-head"><h2>GameCube &amp; Wii · experimental research</h2><span class="pill">WASM / NOT INTEGRATED</span></div>
           <div class="card-body">
             <p>These systems are not playable inside nvd-emu Web yet. RetroArch’s Dolphin core is not a drop-in browser core: Libretro lists it as unavailable for web due to extremely poor performance. A browser port needs a WebAssembly CPU recompiler, graphics backend, audio timing and (for Wii) motion/controller runtime.</p>
-            <p>A separate open-source project, Gecko, has an early WebAssembly frontend, so a browser-based path is technically possible. Its current web code appears to initialize the GameCube implementation, and the public page asks for an IPL/DOL file and DSP IROM. Wii browser support would require separate integration work. This is not yet a polished, retail-disc Wii/GameCube experience.</p>
+            <p>Two concrete browser-port candidates exist, but neither is integrated into nvd-emu. Gecko documents a WASM target and native ISO/RVZ support, while its public web demo still asks for IPL/DOL and optional DSP IROM rather than offering a full retail-disc library flow. The experimental Dolphin-derived WASM port has reported poor unique-frame pacing and an unfinished hardware-WebGPU route. Wii support, retail game loading, audio, controls and saves all need reproducible browser testing before either is ready to integrate.</p>
             <div class="system-card"><div class="system-icon">GC</div><div><strong>Nintendo GameCube</strong><small>Research target · ISO/RVZ loading, graphics/audio, controller map and savestates need integration and validation.</small></div><a class="file-label" href="https://gecko.layle.dev/" target="_blank" rel="noreferrer">Explore test</a></div>
             <div class="system-card"><div class="system-icon">Wii</div><div><strong>Nintendo Wii</strong><small>Research target · add Wiimote motion, pointer, extensions and sensor emulation.</small></div><a class="file-label" href="https://github.com/Torashi1069/emu.nintendo.wii.gecko" target="_blank" rel="noreferrer">Engine source</a></div>
+            <div class="system-card"><div class="system-icon">WASM</div><div><strong>Dolphin-derived browser experiment</strong><small>Research candidate · renderer performance, frame pacing, source provenance and Wii support need validation.</small></div><a class="file-label" href="https://github.com/dougchansan/wasm-dolphin" target="_blank" rel="noreferrer">Engine source</a></div>
             <p style="font-size:11px;margin-bottom:0">No console firmware, keys or games are bundled. Any eventual integration must use user-supplied files and follow the upstream emulator's license.</p>
           </div>
         </section>
@@ -283,7 +284,7 @@
     gba: {name:"Game Boy Advance", icon:"GBA", extensions:["gba","zip"], core:"mGBA"},
     snes: {name:"Super Nintendo", icon:"SNES", extensions:["sfc","smc","zip"], core:"Snes9x"},
     n64: {name:"Nintendo 64", icon:"N64", extensions:["z64","n64","v64","zip"], core:"Mupen64Plus-Next"},
-    psx: {name:"PlayStation", icon:"PS1", extensions:["chd","pbp","iso","cue","bin","img","mdf","zip"], core:"PCSX-ReARMed · HLE fallback"},
+    psx: {name:"PlayStation", icon:"PS1", extensions:["chd","pbp","iso","cue","bin","img","mdf","zip"], core:"PCSX-ReARMed"},
     segaMS: {name:"Sega Master System", icon:"SMS", extensions:["sms","zip"], core:"SMS Plus"},
     segaGG: {name:"Sega Game Gear", icon:"GG", extensions:["gg","zip"], core:"Genesis Plus GX"},
     segaMD: {name:"Sega Mega Drive / Genesis", icon:"MD", extensions:["md","gen","bin","zip"], core:"Genesis Plus GX"},

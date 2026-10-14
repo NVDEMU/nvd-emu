@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101114"><meta name="description" content="Your persistent local game library with automatic console artwork and cover art."><title>Game library · nvd-emu</title><link rel="icon" href="./nvd-emu-logo.svg" type="image/svg+xml"><link rel="manifest" href="./manifest.webmanifest"><link rel="stylesheet" href="./site.css"></head><body><div class="shell"><aside>
+  <div class="brand"><img src="./nvd-emu-logo.svg" alt="nvd-emu logo"><div><strong>nvd-emu</strong><span class="eyebrow">MULTI-SYSTEM EMULATOR</span></div></div>
+  <div class="eyebrow" style="padding:12px 9px 0">WORKSPACE</div>
+  <a class="nav " href="./index.html">▦ &nbsp; Overview</a>
+  <a class="nav active" href="./library.html">▤ &nbsp; Game library</a>
+  <a class="nav " href="./systems.html">◈ &nbsp; Systems</a>
+  <a class="nav " href="./player.html">▶ &nbsp; Player</a>
+  <a class="nav " href="./settings.html">⚙ &nbsp; Settings</a>
+  <div class="side-note"><strong style="color:#f1f1f3">Browser-first retro gaming</strong><br>ROMs stay in this browser profile. EmulatorJS cores load online when you start a game.</div>
+</aside><main>
+  <header class="topline"><div><div class="eyebrow">NVD-EMU WEB / LIBRARY</div><h1>Your game shelf.</h1><p style="margin:0">ROMs saved in this browser, with box art where a matching cover is available.</p></div><span class="pill"><span class="dot"></span> LOCAL STORAGE</span></header>
+  <section class="card"><div class="card-head"><h2>Add games</h2><span class="eyebrow">NO UPLOAD TO A SERVER</span></div><div class="card-body">
+    <div class="form-row"><div><label for="system-select">System for these files</label><select id="system-select"></select></div><div><label for="rom-files">Choose one or more ROM files</label><input id="rom-files" type="file" multiple></div></div>
+    <div class="page-toolbar" style="margin-top:12px;margin-bottom:0"><p style="margin:0;font-size:11px;max-width:640px">Pick the matching system before adding files. Cover art is looked up by filename in the Libretro thumbnail collection; recognized No-Intro/Redump names match most reliably.</p><button class="primary" id="add-games">＋ Save selected games</button></div>
+    <div id="library-status" class="status" role="status">Checking browser storage…</div>
+  </div></section>
+  <section class="card"><div class="card-head"><h2>Saved games</h2><span class="pill" id="game-count">0 games</span></div><div class="card-body">
+    <div id="empty-library" class="notice">Your library is empty. Choose a system and add ROM files above. Game files and cover images are handled locally or fetched directly from the thumbnail source.</div>
+    <div id="games" class="game-grid"></div>
+  </div></section>
+  <div class="footer">Cover art source: <a href="https://github.com/libretro-thumbnails/libretro-thumbnails" target="_blank" rel="noreferrer">Libretro thumbnails</a>. This site doesn't include copyrighted games or BIOS files. A browser may still clear site data unless storage is retained.</div>
+</main></div>
+<script src="./systems-data.js"></script><script src="./artwork.js"></script><script src="./storage.js"></script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const systems = window.NVD_SYSTEMS;
+  const status = (message, kind="") => { $("library-status").textContent=message; $("library-status").className="status "+kind; };
+  const select=$("system-select");
+  for(const [id,system] of Object.entries(systems).sort((a,b)=>a[1].name.localeCompare(b[1].name))){
+    const option=document.createElement("option");option.value=id;option.textContent=system.name;select.append(option);
+  }
+  async function render(){
+    try{
+      const records=(await window.NVDLibrary.list()).filter(record=>systems[record.systemId]).sort((a,b)=>(b.addedAt||0)-(a.addedAt||0));
+      $("game-count").textContent=records.length+" game"+(records.length===1?"":"s");
+      $("empty-library").classList.toggle("hidden",records.length>0);
+      const container=$("games");container.replaceChildren();
+      for(const record of records){
+        const system=systems[record.systemId];
+        const tile=document.createElement("article");tile.className="game-tile";
+        const cover=document.createElement("div");cover.className="cover";
+        const fallback=document.createElement("span");fallback.className="cover-fallback";fallback.textContent=system.badge||system.name;
+        const img=document.createElement("img");cover.append(fallback,img);window.NVD_ARTWORK.setBoxArt(img,record,system);
+        const info=document.createElement("div");info.className="game-info";
+        const name=document.createElement("div");name.className="game-name";name.textContent=record.name;
+        const meta=document.createElement("div");meta.className="game-meta";meta.textContent=system.name+" · "+(record.size<1048576?(record.size/1024).toFixed(1)+" KB":(record.size/1048576).toFixed(1)+" MB");
+        const actions=document.createElement("div");actions.className="game-actions";
+        const play=document.createElement("a");play.className="button primary";play.href="./player.html?launch="+encodeURIComponent(record.key);play.textContent="▶ Play";
+        const remove=document.createElement("button");remove.className="subtle";remove.textContent="Remove";remove.addEventListener("click",async()=>{try{await window.NVDLibrary.remove(record.key);status("Removed "+record.name+". The original file on disk was not changed.","ok");await render();}catch(error){status("Could not remove game: "+error.message,"error");}});
+        actions.append(play,remove);info.append(name,meta,actions);tile.append(cover,info);container.append(tile);
+      }
+    }catch(error){status("Cannot read the saved library: "+error.message+". Check browser site-storage permissions.","error");}
+  }
+  $("add-games").addEventListener("click",async()=>{
+    const files=Array.from($("rom-files").files||[]);if(!files.length){status("Choose at least one game file first.","error");return;}
+    const systemId=select.value;let saved=0;
+    $("add-games").disabled=true;
+    try{
+      for(const file of files){
+        status("Saving "+file.name+" ("+(saved+1)+" of "+files.length+")…");
+        await window.NVDLibrary.save(file,systemId);saved++;
+      }
+      $("rom-files").value="";
+      status("Saved "+saved+" game"+(saved===1?"":"s")+" to this browser's persistent library.","ok");
+      await render();
+    }catch(error){status("Saved "+saved+" of "+files.length+" file(s). Storage error: "+error.message,"error");await render();}
+    finally{$("add-games").disabled=false;}
+  });
+  window.NVDLibrary.requestPersistence().then(ok=>{if(ok)status("Browser granted persistent storage. Your game library will be protected from routine storage eviction.","ok");else status("Library is ready. The browser may still clear site data from its settings or under storage pressure.");}).catch(()=>{});
+  render();
+})();
+</script></body></html>

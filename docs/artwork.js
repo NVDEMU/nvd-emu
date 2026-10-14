@@ -82,34 +82,41 @@
     img.src=src||fallbackLogoSvg(system);
   }
   function candidatesFor(entry,system) {
-    const original=String(entry.name||"").replace(/\\/g,"/").split("/").pop().replace(/\\.[^.]+$/,"").trim();
-    const base=displayGameName(entry.name);
+    const fileName=String(entry.name||"").replace(/\\/g,"/").split("/").pop();
+    const original=fileName.replace(/\.[^.]+$/,"").trim();
+    const base=displayGameName(fileName);
     const clean=base.replace(/[&*\/:<>?\\|"]/g,"_").trim();
     const noRegion=base.replace(/\s*\([^)]*\)/g,"").replace(/\s*\[[^\]]*\]/g,"").trim();
     const shortName=base.split(/\s(?:\(|\[)/)[0].trim();
-    const regionSuffixes=[" (World)"," (USA)"," (USA, Europe)"," (Europe)"," (Japan)"," (Japan, USA)"," (USA, Europe, Japan)"," (En,Ja)"];
     const names=[...new Set([original,base,clean,noRegion,shortName].filter(Boolean))];
-    const regionSuffixes=[" (World)"," (USA)"," (USA, Europe)"," (Europe)"," (Japan)"," (Japan, USA)"," (USA, Europe, Japan)"," (En,Ja)"];
-    const regionalNames=[];
-    if(!/\\([^)]*\\)|\\[[^\\]]*\\]/.test(original)){
-      for(const name of [...new Set([original,base,clean])])for(const region of regionSuffixes)regionalNames.push(name+region);
-    }
-    const allBoxNames=[...new Set([...names,...regionalNames])];
-    const extension=((entry.name||"").split(".").pop()||"").toLowerCase();
-    const playlists=[system.boxartPlaylist];
-    if(entry.systemId==="gb"||system.name==="Game Boy / Game Boy Color")playlists.push(extension==="gbc"?"Nintendo - Game Boy Color":"Nintendo - Game Boy");
-    if(entry.systemId==="ngp"&&extension==="ngc")playlists.unshift("SNK - Neo Geo Pocket Color");
-    if(entry.systemId==="wonderswan"&&extension==="wsc")playlists.unshift("Bandai - WonderSwan Color");
-    const folders=["Named_Boxarts","Named_Titles","Named_Snaps"];
-    const urls=[];
-    for(const playlist of [...new Set(playlists.filter(Boolean))]){
-      // Box art gets exact names plus likely region variants; title screens and snaps are a smaller fallback set.
-      for(const name of allBoxNames)urls.push("https://thumbnails.libretro.com/"+playlist.split("/").map(encodeURIComponent).join("/")+"/Named_Boxarts/"+encodeURIComponent(name)+".png");
-      for(const folder of folders.slice(1)){
-        for(const name of names.slice(0,3))urls.push("https://thumbnails.libretro.com/"+playlist.split("/").map(encodeURIComponent).join("/")+"/"+folder+"/"+encodeURIComponent(name)+".png");
+    const hasRegion=/\([^)]*\)|\[[^\]]*\]/.test(original);
+    const regionSuffixes=[" (World)"," (USA)"," (USA, Europe)"," (Europe)"," (Japan)"," (Japan, USA)"];
+    const regionNames=[];
+    if(!hasRegion) {
+      for(const name of [...new Set([original,base,clean].filter(Boolean))]) {
+        for(const region of regionSuffixes) regionNames.push(name+region);
       }
     }
-    return urls;
+    const extension=(fileName.split(".").pop()||"").toLowerCase();
+    const playlists=[system.boxartPlaylist];
+    if(entry.systemId==="gb"||system.name==="Game Boy / Game Boy Color") {
+      playlists.push(extension==="gbc"?"Nintendo - Game Boy Color":"Nintendo - Game Boy");
+    }
+    if(entry.systemId==="ngp"&&extension==="ngc") playlists.unshift("SNK - Neo Geo Pocket Color");
+    if(entry.systemId==="wonderswan"&&extension==="wsc") playlists.unshift("Bandai - WonderSwan Color");
+    const urls=[];
+    for(const playlist of [...new Set(playlists.filter(Boolean))]) {
+      const prefix="https://thumbnails.libretro.com/"+playlist.split("/").map(encodeURIComponent).join("/");
+      // Try the source filename and common cleaned variants as box art first.
+      for(const name of [...names,...regionNames].slice(0,12)) {
+        urls.push(prefix+"/Named_Boxarts/"+encodeURIComponent(name)+".png");
+      }
+      // A title screen or snapshot is a useful visual fallback, but never substitute console branding.
+      for(const folder of ["Named_Titles","Named_Snaps"]) {
+        for(const name of names.slice(0,2)) urls.push(prefix+"/"+folder+"/"+encodeURIComponent(name)+".png");
+      }
+    }
+    return [...new Set(urls)];
   }
   function setBoxArt(img,entry,system) {
     img.loading="lazy";

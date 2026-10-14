@@ -222,7 +222,17 @@
             <div class="system-card"><div class="system-icon">GBA</div><div><strong>Game Boy Advance</strong><small>mGBA · .gba files</small><button data-pick="gba">Try</button></div></div>
             <div class="system-card"><div class="system-icon">SNES</div><div><strong>Super Nintendo</strong><small>Snes9x · .sfc and .smc files</small><button data-pick="snes">Try</button></div></div>
             <div class="system-card"><div class="system-icon">SMS</div><div><strong>Sega Master System</strong><small>SMS Plus · .sms files</small><button data-pick="segaMS">Try</button></div></div>
-            <div class="system-card"><div class="system-icon">MD</div><div><strong>Sega Mega Drive / Genesis</strong><small>Genesis Plus GX · .md, .gen and .bin files</small><button data-pick="segaMD">Try</button></div></div>
+            <div class="system-card"><div class="system-icon">MD</div><div><strong>Sega Mega Drive / Genesis</strong><small>Genesis Plus GX · .md, .gen and .bin files</small></div><button data-pick="segaMD">Try</button></div>
+          </div>
+        </section>
+        <section class="card" style="margin-top:16px">
+          <div class="card-head"><h2>GameCube &amp; Wii · experimental research</h2><span class="pill">WASM / NOT INTEGRATED</span></div>
+          <div class="card-body">
+            <p>These systems are not playable inside nvd-emu Web yet. They require a much heavier PowerPC, graphics, audio and (for Wii) motion/controller runtime; the current EmulatorJS core catalogue does not offer a ready-to-use Dolphin Wii/GameCube core.</p>
+            <p>A separate open-source project, Gecko, has an early WebAssembly frontend, so a browser-based path is technically possible. Its currently published web page asks for an IPL/DOL file and DSP IROM, and its own project notes say compatibility is still in development. That is not yet a polished, retail-disc Wii/GameCube experience.</p>
+            <div class="system-card"><div class="system-icon">GC</div><div><strong>Nintendo GameCube</strong><small>Research target · ISO/RVZ loading, graphics/audio, controller map and savestates need integration and validation.</small></div><a class="file-label" href="https://gecko.layle.dev/" target="_blank" rel="noreferrer">Explore test</a></div>
+            <div class="system-card"><div class="system-icon">Wii</div><div><strong>Nintendo Wii</strong><small>Research target · add Wiimote motion, pointer, extensions and sensor emulation.</small></div><a class="file-label" href="https://github.com/Torashi1069/emu.nintendo.wii.gecko" target="_blank" rel="noreferrer">Engine source</a></div>
+            <p style="font-size:11px;margin-bottom:0">No console firmware, keys or games are bundled. Any eventual integration must use user-supplied files and follow the upstream emulator's license.</p>
           </div>
         </section>
       </section>
@@ -234,7 +244,9 @@
             <div class="settings-line"><span>Version</span><strong>Web Preview 0.1</strong></div>
             <div class="settings-line"><span>Platforms</span><strong>macOS · Windows · modern browsers</strong></div>
             <div class="settings-line"><span>Emulation engine</span><strong>EmulatorJS / libretro cores</strong></div>
-            <div class="settings-line"><span>Save states</span><strong>Provided by the selected core when supported</strong></div>
+            <div class="settings-line"><span>Save states</span><strong>Save/Load + quick slots in emulator toolbar</strong></div>
+            <div class="settings-line"><span>Control remapping</span><strong>Keyboard + supported gamepads from toolbar settings</strong></div>
+            <div class="settings-line"><span>GameCube / Wii</span><strong>Experimental browser-engine research; not supported here yet</strong></div>
             <div class="settings-line"><span>Privacy</span><strong>ROM file is not uploaded by this page</strong></div>
             <p>The emulator core files are fetched from <a href="https://cdn.emulatorjs.org/stable/data/" target="_blank" rel="noreferrer" style="color:#ff8587">EmulatorJS's stable CDN</a> when you launch a game. This means the browser edition needs an internet connection for the core download.</p>
             <p>EmulatorJS is GPL-3.0 licensed and the Atari 2600 Stella 2014 core is GPLv2. This site uses the published hosted engine and does not bundle its emulator core assets. Please consult the respective upstream projects for full license terms.</p>
@@ -248,6 +260,17 @@
         <div id="player-stage">
           <div class="player-placeholder" id="player-placeholder"><div class="console"><div class="console-screen">INSERT CARTRIDGE</div><p style="margin:0">Choose a local ROM file to start emulation.</p></div></div>
           <iframe id="player-frame" class="player-frame hidden" title="nvd-emu game player" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe>
+        </div>
+        <div class="card-body" style="border-top:1px solid #292a30;background:#141519">
+          <div class="eyebrow" style="margin-bottom:10px">CONTROLS &amp; SAVE DATA</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:9px">
+            <span class="pill">⌨ Keyboard remapping</span>
+            <span class="pill">🎮 Gamepad mapping</span>
+            <span class="pill">↧ Save state</span>
+            <span class="pill">↥ Load state</span>
+            <span class="pill">⚡ Quick save/load</span>
+          </div>
+          <p style="margin:0;font-size:12px">Use the emulator toolbar inside the game window: open the gamepad/controller settings to remap keys and buttons, and use Save State / Load State or Quick Save / Quick Load to preserve progress. State compatibility and browser persistence depend on the selected core; keep an exported save-state file for important progress.</p>
         </div>
         <div class="status" id="player-status"><span class="dot" style="background:#9799a4"></span><span id="status-text">Ready for a game file. No ROMs have been loaded.</span></div>
       </section>
@@ -484,7 +507,7 @@
       name: selectedFile.name
     };
     const safeJson = JSON.stringify(config).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
-    frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;background:#08090b;color:white;height:100%;font-family:system-ui,sans-serif}#game{width:100%;height:100%;min-height:320px}body{overflow:hidden}</style></head><body><div id="game"></div><script>const config=${safeJson};window.EJS_player="#game";window.EJS_core=config.core;window.EJS_gameUrl=config.romUrl;window.EJS_gameName=config.name;window.EJS_pathtodata=${JSON.stringify(coreCdn)};window.EJS_color="#dc292b";window.EJS_startOnLoaded=true;window.EJS_volume=0.8;window.EJS_language="en-US";<\/script><script src="https://cdn.emulatorjs.org/stable/data/loader.js"><\/script></body></html>`;
+    frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;background:#08090b;color:white;height:100%;font-family:system-ui,sans-serif}#game{width:100%;height:100%;min-height:320px}body{overflow:hidden}</style></head><body><div id="game"></div><script>const config=${safeJson};window.EJS_player="#game";window.EJS_core=config.core;window.EJS_gameUrl=config.romUrl;window.EJS_gameName=config.name;window.EJS_pathtodata=${JSON.stringify(coreCdn)};window.EJS_color="#dc292b";window.EJS_startOnLoaded=true;window.EJS_volume=0.8;window.EJS_language="en-US";window.EJS_Buttons={playPause:true,restart:true,mute:true,settings:true,fullscreen:true,saveState:true,loadState:true,gamepad:true,volume:true,saveSavFiles:true,loadSavFiles:true,quickSave:true,quickLoad:true,screenshot:true,cacheManager:true,exitEmulation:true};window.EJS_defaultOptions={"save-state-location":"browser","save-state-slot":0};<\/script><script src="https://cdn.emulatorjs.org/stable/data/loader.js"><\/script></body></html>`;
     setStatus("Loading " + chosen.name + " core from EmulatorJS. ROM file remains local.");
     recordEntry(selectedFile, select.value);
     $("player-section").scrollIntoView({behavior:"smooth",block:"start"});

@@ -9,8 +9,8 @@
   <a class="nav " href="./settings.html">⚙ &nbsp; Settings</a>
   <div class="side-note"><strong style="color:#f1f1f3">Browser-first retro gaming</strong><br>ROMs stay in this browser profile. EmulatorJS cores load online when you start a game.</div>
 </aside><main>
-  <header class="topline"><div><div class="eyebrow">NVD-EMU WEB / SYSTEMS</div><h1>Pick your console.</h1><p style="margin:0">34 configured systems across consoles, handhelds, arcade and home computers.</p></div><span class="pill"><span class="dot"></span> EMULATORJS</span></header>
-  <div class="page-toolbar"><input id="system-search" class="page-search" type="search" placeholder="Search systems, brands, file extensions…"><span class="pill" id="system-count">34 systems</span></div>
+  <header class="topline"><div><div class="eyebrow">NVD-EMU WEB / SYSTEMS</div><h1>Pick your console.</h1><p style="margin:0">Configured browser systems across consoles, handhelds, arcade and home computers.</p></div><span class="pill"><span class="dot"></span> EMULATORJS</span></header>
+  <div class="page-toolbar"><input id="system-search" class="page-search" type="search" placeholder="Search systems, brands, file extensions…"><span class="pill" id="system-count">Loading systems…</span></div>
   <div class="system-grid" id="systems-grid"></div>
   <section class="card" style="margin-top:18px"><div class="card-head"><h2>Research targets · not playable yet</h2><span class="pill">NOT INTEGRATED</span></div><div class="card-body">
     <div class="system-grid">
@@ -37,9 +37,9 @@
       const fallback=document.createElement("span");fallback.className="logo-fallback";fallback.textContent=system.badge||system.name;
       const logo=document.createElement("img");logoBox.append(fallback,logo);window.NVD_ARTWORK.setSystemLogo(logo,system);
       const title=document.createElement("h3");title.textContent=system.name;
-      const core=document.createElement("p");core.textContent=system.core+" core target";
+      const core=document.createElement("p");core.textContent=(system.experimental?"EXPERIMENTAL · ":"")+system.core+" core target";
       const extensions=document.createElement("div");extensions.className="extension-list";extensions.textContent=exts;
-      const link=document.createElement("a");link.className="button primary";link.href="./player.html?system="+encodeURIComponent(id);link.textContent="Load a game";
+      const link=document.createElement("a");link.className="button primary";link.href="./player.html?system="+encodeURIComponent(id);link.textContent=system.experimental?"Try experimental core":"Load a game";
       card.append(logoBox,title,core,extensions);
       if(system.note){const note=document.createElement("p");note.textContent=system.note;card.append(note);}
       card.append(link);grid.append(card);

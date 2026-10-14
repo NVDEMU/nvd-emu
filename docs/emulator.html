@@ -73,7 +73,7 @@
         window.EJS_startOnLoaded = true;
         window.EJS_gameID = config.gameID;
         window.EJS_biosUrl = biosUrl;
-        window.EJS_volume = 0.8;
+        window.EJS_volume = (() => { try { const p = JSON.parse(localStorage.getItem("nvd-emu-settings-v1") || "{}"); return Math.max(0, Math.min(100, Number(p.volume ?? 80))) / 100; } catch (_) { return 0.8; } })();
         window.EJS_language = "en-US";
         window.EJS_defaultOptions = config.core === "psx"
           ? { "save-state-location": "browser", "save-state-slot": 0, "pcsx_rearmed_pad1type": "dualshock",

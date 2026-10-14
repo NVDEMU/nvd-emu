@@ -1,69 +1,21 @@
-/* Enable SharedArrayBuffer only on the dedicated 3DS player route.
- * Keeping the rest of the UI non-isolated lets public cover-art hosts load normally.
- * GitHub Pages cannot set COOP/COEP headers, so the service worker adds them to
- * the player.html?system=3ds navigation response.
- */
+/* Scope cross-origin isolation to the threaded 3DS player and the nested GameCube WASM page. */
 (() => {
-  "use strict";
-  const wants3dsIsolation = window.location.pathname.endsWith("/player.html")
-    && new URLSearchParams(window.location.search).get("system") === "3ds";
-  const MODE_KEY = "nvd-emu-coi-3ds-reload-v13";
-  const sw = navigator.serviceWorker;
-
-  if (!wants3dsIsolation) {
-    window.NVD_COI_MODE = "inactive";
-    if (window.isSecureContext && sw) {
-      sw.register("./sw.js").catch(error => {
-        console.warn("NVD-EMU: could not register the service worker.", error);
-      });
-    }
-    return;
-  }
-
-  const setUnavailable = () => {
-    window.NVD_COI_MODE = "unavailable";
-    console.warn("NVD-EMU: 3DS isolation could not be enabled in this browser context.");
-  };
-  const isolated = () => window.crossOriginIsolated === true
-    && typeof SharedArrayBuffer === "function";
-
-  if (isolated()) {
-    try { sessionStorage.removeItem(MODE_KEY); } catch (_) {}
-    window.NVD_COI_MODE = "isolated";
-    return;
-  }
-  if (!window.isSecureContext || !sw) {
-    setUnavailable();
-    return;
-  }
-
-  let reloadQueued = false;
-  const attemptReload = () => {
-    if (isolated()) {
-      try { sessionStorage.removeItem(MODE_KEY); } catch (_) {}
-      window.NVD_COI_MODE = "isolated";
-      return;
-    }
-    if (reloadQueued) return;
-    reloadQueued = true;
-    let alreadyTried = false;
-    try { alreadyTried = sessionStorage.getItem(MODE_KEY) === "1"; } catch (_) {}
-    if (alreadyTried) {
-      setUnavailable();
-      return;
-    }
-    try { sessionStorage.setItem(MODE_KEY, "1"); } catch (_) {}
-    window.location.reload();
-  };
-
-  if (sw.controller) {
-    attemptReload();
-    return;
-  }
-
-  sw.addEventListener("controllerchange", attemptReload, { once: true });
-  sw.register("./sw.js").catch(error => {
-    setUnavailable();
-    console.warn("NVD-EMU: could not register the isolation service worker.", error);
-  });
+"use strict";
+const path=window.location.pathname,params=new URLSearchParams(window.location.search);
+const wants3ds=path.endsWith("/player.html")&&params.get("system")==="3ds";
+const wantsGamecube=path.endsWith("/gamecube-engine/index.html");
+const wantsIsolation=wants3ds||wantsGamecube;
+const modeKey=wantsGamecube?"nvd-emu-coi-gamecube-reload-v1":"nvd-emu-coi-3ds-reload-v14";
+const scriptUrl=document.currentScript&&document.currentScript.src?document.currentScript.src:window.location.href;
+const swUrl=new URL("./sw.js",scriptUrl),swScope=new URL("./",scriptUrl),sw=navigator.serviceWorker;
+const isolated=()=>window.crossOriginIsolated===true&&typeof SharedArrayBuffer==="function";
+if(!wantsIsolation){window.NVD_COI_MODE="inactive";if(window.isSecureContext&&sw)sw.register(swUrl.href,{scope:swScope.pathname}).catch(error=>console.warn("NVD-EMU: service-worker registration failed.",error));return;}
+const unavailable=()=>{window.NVD_COI_MODE="unavailable";console.warn("NVD-EMU: required cross-origin isolation could not be enabled.");};
+if(isolated()){try{sessionStorage.removeItem(modeKey);}catch(_){}window.NVD_COI_MODE="isolated";return;}
+if(!window.isSecureContext||!sw){unavailable();return;}
+let reloadQueued=false;
+const attemptReload=()=>{if(isolated()){try{sessionStorage.removeItem(modeKey);}catch(_){}window.NVD_COI_MODE="isolated";return;}if(reloadQueued)return;reloadQueued=true;let tried=false;try{tried=sessionStorage.getItem(modeKey)==="1";}catch(_){}if(tried){unavailable();return;}try{sessionStorage.setItem(modeKey,"1");}catch(_){}window.location.reload();};
+if(sw.controller){attemptReload();return;}
+sw.addEventListener("controllerchange",attemptReload,{once:true});
+sw.register(swUrl.href,{scope:swScope.pathname}).catch(error=>{unavailable();console.warn("NVD-EMU: isolation service-worker registration failed.",error);});
 })();

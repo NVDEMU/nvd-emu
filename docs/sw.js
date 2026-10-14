@@ -1,4 +1,4 @@
-const CACHE_NAME = "nvd-emu-web-shell-v13";
+const CACHE_NAME = "nvd-emu-web-shell-v14";
 const APP_FILES = [
   "./", "./index.html", "./library.html", "./systems.html", "./player.html",
   "./settings.html", "./emulator.html", "./site.css", "./systems-data.js", "./artwork.js",
@@ -15,7 +15,9 @@ const isolationPolicy = webKitBrowser ? "require-corp" : "credentialless";
 function is3dsPlayerNavigation(request) {
   if (!request || request.mode !== "navigate") return false;
   const url = new URL(request.url);
-  return (url.pathname.endsWith("/player.html") || url.pathname.endsWith("/emulator.html")) && url.searchParams.get("system") === "3ds";
+  const is3dsRoute = (url.pathname.endsWith("/player.html") || url.pathname.endsWith("/emulator.html")) && url.searchParams.get("system") === "3ds";
+  const isGamecubeRoute = url.pathname.endsWith("/gamecube-engine/index.html");
+  return is3dsRoute || isGamecubeRoute;
 }
 
 function addIsolationHeaders(response, request) {
@@ -41,7 +43,7 @@ self.addEventListener("install", event => {
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
+      .then(keys => Promise.all(keys.filter(key => key.startsWith("nvd-emu-web-shell-v") && key !== CACHE_NAME).map(key => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });

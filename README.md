@@ -41,7 +41,9 @@ This is an early experiment, not a promise of playable compatibility. It require
 
 NVD-EMU is static HTML, CSS and JavaScript. [EmulatorJS](https://github.com/EmulatorJS/EmulatorJS) supplies the WebAssembly emulation cores. The game player exposes the EmulatorJS toolbar for controller mapping, save/load states, quick save/load, screenshots, audio and fullscreen where supported. The PlayStation profile requests DualShock input and allows an optional BIOS file from the user.
 
-Sega Dreamcast, GameCube and Wii are research targets rather than advertised working systems: the current public EmulatorJS core list does not document a Dreamcast core, and a full Dolphin-derived browser port needs separate engineering and performance testing. See the [browser feasibility roadmap](docs/roadmap/gamecube-wii-wasm.md).
+GameCube now opens in a dedicated, experimental Dolphin-derived WebAssembly player rather than an EmulatorJS core. It requires a modern desktop Chromium browser with WebGPU and SharedArrayBuffer; compatibility and performance are not guaranteed, and games/firmware are not bundled. Wii and Dreamcast remain research targets. See the [browser feasibility roadmap](docs/roadmap/gamecube-wii-wasm.md) and the [third-party runtime notice](docs/gamecube-engine/UPSTREAM.md).
+
+Settings also includes a recovery tool that removes NVD-EMU-owned legacy IndexedDB databases and caches when orphaned duplicate ROM entries no longer appear in the visible library.
 
 ## Project scope
 

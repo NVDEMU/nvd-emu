@@ -52,4 +52,4 @@ Gecko also requires user-provided system files for the appropriate paths (includ
 
 ## Current status
 
-**Research candidates identified; neither engine is integrated into nvd-emu Web.** RetroArch Dolphin is not a drop-in browser core. The next technical task is to build and compare the experimental wasm-dolphin and Gecko WASM targets in CI, then test retail-disc loading, real gameplay, Wii support, controller inputs, save-state support and measured performance before selecting an integration path.
+**GameCube has an experimental dedicated browser player integrated.** NVD-EMU vendors the browser runtime from `wasm-dolphin` at pinned commit `7e38409ace3dda709c178312ff63fd92a3653cc7`; the Player and library route saved GameCube disc images into this isolated WebAssembly frontend. This is a research prototype, not a promise of broad compatibility. It needs desktop Chromium with WebGPU and SharedArrayBuffer; boot, rendering, speed, audio and saves still require real-device validation. GPL notices and a pinned upstream-source link are shipped alongside the runtime. Wii remains a separate research target.

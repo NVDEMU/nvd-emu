@@ -48,7 +48,7 @@
     } else if(slug==="snk") {
       mark='<text x="100" y="65" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="51" letter-spacing="-2" fill="'+color+'">SNK</text>';
     } else if(slug==="3do") {
-      mark='<path d="M36 26 L77 9 L77 28 L55 38 L55 66 L77 78 L77 96 L36 77Z M84 9 L125 26 L125 77 L84 96 L84 77 L106 66 L106 38 L84 28Z M133 26 L164 26 L164 80 L133 80 L133 64 L148 64 L148 42 L133 42Z" fill="'+color+'"/>';
+      mark='<ellipse cx="54" cy="48" rx="33" ry="32" fill="none" stroke="'+color+'" stroke-width="8"/><path d="M29 48 H79 M54 23 V73" stroke="'+color+'" stroke-width="5"/><text x="126" y="61" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="35" font-weight="900" fill="'+color+'">3DO</text>';
     } else if(slug==="microsoft") {
       mark='<path d="M28 21 L78 21 L78 46 L28 46Z M84 21 L134 21 L134 46 L84 46Z M28 52 L78 52 L78 77 L28 77Z M84 52 L134 52 L134 77 L84 77Z" fill="'+color+'"/><text x="153" y="47" font-family="Arial,sans-serif" font-weight="900" font-size="17" fill="'+color+'">MS-DOS</text>';
     } else if(slug==="philips") {

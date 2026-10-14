@@ -49,7 +49,7 @@ jobs:
           host: ${{ runner.os == 'Windows' && 'windows' || 'mac' }}
           target: desktop
           arch: ${{ matrix.qt_arch }}
-          modules: qtsvg
+          archives: qtsvg
           cache: true
 
       - name: Configure

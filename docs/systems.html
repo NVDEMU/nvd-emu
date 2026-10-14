@@ -15,7 +15,6 @@
   <section class="card" style="margin-top:18px"><div class="card-head"><h2>Other experimental and research targets</h2><span class="pill">RESEARCH</span></div><div class="card-body">
     <div class="system-grid">
       
-      <article class="system-tile"><div class="system-logo"><span class="logo-fallback">Logo unavailable</span><img data-research-logo="wii" alt="Nintendo Wii logo"></div><h3>Nintendo Wii</h3><p>Browser/WASM research only. A complete Wii runtime with motion controls is not integrated into NVD-EMU.</p><a class="button" href="https://github.com/NVDEMU/nvd-emu/blob/main/docs/roadmap/gamecube-wii-wasm.md" target="_blank" rel="noreferrer">Explore research</a></article>
       <article class="system-tile"><div class="system-logo"><span class="logo-fallback">Logo unavailable</span><img data-research-logo="ps2" alt="PlayStation 2 logo"></div><h3>PlayStation 2</h3><p>Not supported in the current browser build. A real WebAssembly core and compatibility testing would be required.</p></article>
       <article class="system-tile"><div class="system-logo"><span class="logo-fallback">Logo unavailable</span><img data-research-logo="dreamcast" alt="Sega Dreamcast logo"></div><h3>Sega Dreamcast</h3><p>Research target. The current EmulatorJS public core list does not document a Flycast/Dreamcast core, so NVD-EMU will not advertise it as a working system until a compatible browser core is verified.</p><a class="button" href="https://emulatorjs.org/docs4devs/cores/" target="_blank" rel="noreferrer">Check core list</a></article>
       <article class="system-tile"><div class="system-logo"><span class="logo-fallback">Logo unavailable</span><img data-research-logo="msx" alt="MSX computer standard logo"></div><h3>MSX / MSX2</h3><p>Research target. A blueMSX core pull request exists upstream but is not yet part of the shipped EmulatorJS core set.</p><a class="button" href="https://github.com/EmulatorJS/EmulatorJS/pulls?q=is%3Apr+blueMSX" target="_blank" rel="noreferrer">Track core work</a></article>
@@ -30,7 +29,6 @@
 (() => {
   const researchLogos = {
     gamecube: {name:"Nintendo GameCube",logo:"nintendo",logoFile:"Nintendo GameCube Official Logo.svg",brandLogoFile:"Nintendo logo.svg"},
-    wii: {name:"Nintendo Wii",logo:"nintendo",logoFile:"Wii.svg",brandLogoFile:"Nintendo logo.svg"},
     ps2: {name:"PlayStation 2",logo:"playstation",logoFile:"PlayStation 2 logo.svg",brandLogoFile:"./assets/logos/playstation.svg"},
     dreamcast: {name:"Sega Dreamcast",logo:"sega",logoFile:"Dreamcast logo.svg",brandLogoFile:"./assets/logos/sega.svg"},
     msx: {name:"MSX / MSX2",logo:"nec",brandLogoFile:"./assets/logos/nec.svg"},

@@ -19,9 +19,9 @@
       <button id="play" class="primary" style="width:100%;margin-top:14px">▶ Play game</button>
       <button id="stop" style="width:100%;margin-top:8px">Stop game</button>
       <div id="player-status" class="status" role="status">The emulator engine is downloaded from EmulatorJS when you start a game.</div>
-      <p style="font-size:11px">Remap controls, save/load states, and configure input using the EmulatorJS toolbar. ROMs are not uploaded to NVD-EMU.</p>
+      <p style="font-size:11px">Keyboard controls work by default. Use the in-game EmulatorJS controller/settings toolbar to remap keys or controller buttons. The Dolphin-based GameCube/Wii player has a separate KEYS remapping panel. ROMs are not uploaded to NVD-EMU.</p>
     </div></section>
-    <section class="card"><div class="card-head"><h2 id="game-title">Now playing</h2><a href="./library.html" style="font-size:11px">Open library ↗</a></div><div id="placeholder" class="player-placeholder"><div><div class="eyebrow">NVD-EMU PLAYER</div><h2 style="margin-top:10px">Your game goes here.</h2><p>Pick a system and file, then press Play.</p></div></div><iframe id="emulator-frame" class="player-frame hidden" title="EmulatorJS game player" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe></section>
+    <section class="card"><div class="card-head"><h2 id="game-title">Now playing</h2><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button id="player-fullscreen" type="button" disabled>Fullscreen</button><a href="./library.html" style="font-size:11px">Open library ↗</a></div></div><div id="placeholder" class="player-placeholder"><div><div class="eyebrow">NVD-EMU PLAYER</div><h2 style="margin-top:10px">Your game goes here.</h2><p>Pick a system and file, then press Play.</p></div></div><iframe id="emulator-frame" class="player-frame hidden" title="EmulatorJS game player" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe></section>
   </div>
   <div class="footer">EmulatorJS stable CDN is used for the browser core. Some systems need additional files or BIOS. Compatibility varies by game. Use only game files you are legally entitled to use.</div>
 </main></div>
@@ -53,7 +53,7 @@
     frame.onerror=null;
     frame.removeAttribute("srcdoc");
     frame.removeAttribute("src");
-    frame.classList.add("hidden");$("placeholder").classList.remove("hidden");
+    frame.classList.add("hidden");$("player-fullscreen").disabled=true;$("placeholder").classList.remove("hidden");
     if(gameUrl){URL.revokeObjectURL(gameUrl);gameUrl=null;}if(biosUrl){URL.revokeObjectURL(biosUrl);biosUrl=null;}
     setStatus("Game stopped.");
   }
@@ -62,9 +62,14 @@
   async function launch(){
     if(!selectedFile){setStatus("Choose a game file first.","error");return;}
     const id=select.value, system=systems[id];
-    if(id==="gamecube"){
-      try{const saved=await window.NVDLibrary.save(selectedFile,id);window.location.href="./gamecube-engine/index.html?launch="+encodeURIComponent(saved.key);}
-      catch(error){window.location.href="./gamecube-engine/index.html?storage-error="+encodeURIComponent(error.message||String(error));}
+    if(id==="gamecube"||id==="wii"){
+      if(!supported(selectedFile,system)){setStatus("That file extension doesn't match "+system.name+". Choose the correct system or another file.","error");return;}
+      try{
+        const saved=await window.NVDLibrary.save(selectedFile,id);
+        window.location.href="./gamecube-engine/index.html?system="+encodeURIComponent(id)+"&launch="+encodeURIComponent(saved.key);
+      }catch(error){
+        window.location.href="./gamecube-engine/index.html?system="+encodeURIComponent(id)+"&storage-error="+encodeURIComponent(error.message||String(error));
+      }
       return;
     }
     if(id==="3ds" && (window.crossOriginIsolated !== true || typeof SharedArrayBuffer !== "function")) {
@@ -78,6 +83,7 @@
     }catch(error){setStatus("Browser storage couldn't save this ROM ("+error.message+"). Trying to play it for this session…","error");}
     stop();
     $("game-title").textContent=selectedFile.name;
+    $("player-fullscreen").disabled=false;
     $("placeholder").classList.add("hidden");frame.classList.remove("hidden");
     const dataPath="https://cdn.emulatorjs.org/"+(system.coreChannel||"stable")+"/data/";
     const config={core:system.coreId||id,dataPath,threads:system.threads===true||id==="3ds",romFile:selectedFile,biosFile:id==="psx"?selectedBios:null,name:selectedFile.name,gameID:hashGame(id+":"+selectedFile.name.toLowerCase())};
@@ -103,6 +109,15 @@
   biosInput.addEventListener("change",()=>{selectedBios=biosInput.files&&biosInput.files[0]||null;if(selectedBios)setStatus("Optional BIOS selected locally; it is not uploaded.");});
   $("play").addEventListener("click",()=>launch().catch(error=>setStatus("Could not start game: "+error.message,"error")));
   $("stop").addEventListener("click",stop);
+  const fullscreenButton=$("player-fullscreen");
+  fullscreenButton.addEventListener("click",async()=>{
+    try{
+      if(document.fullscreenElement===frame)await document.exitFullscreen();
+      else if(frame.requestFullscreen)await frame.requestFullscreen();
+      else throw new Error("Fullscreen is not supported by this browser.");
+    }catch(error){setStatus("Fullscreen could not start. Allow fullscreen for this site and try again.","error");}
+  });
+  document.addEventListener("fullscreenchange",()=>{fullscreenButton.textContent=document.fullscreenElement===frame?"Exit fullscreen":"Fullscreen";});
   syncSystem();
   if(params.get("launch")){
     window.NVDLibrary.get(params.get("launch")).then(record=>{

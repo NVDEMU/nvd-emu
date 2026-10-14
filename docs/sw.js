@@ -1,9 +1,9 @@
-const CACHE_NAME = "nvd-emu-web-shell-v7";
+const CACHE_NAME = "nvd-emu-web-shell-v8";
 const APP_FILES = [
   "./", "./index.html", "./library.html", "./systems.html", "./player.html",
   "./settings.html", "./site.css", "./systems-data.js", "./artwork.js",
   "./storage.js", "./coi-bootstrap.js", "./manifest.webmanifest",
-  "./nvd-emu-logo.svg", "./assets/logos/arcade.svg", "./assets/logos/atari.svg", "./assets/logos/playstation.svg", "./assets/logos/sega.svg", "./assets/logos/nec.svg", "./assets/logos/commodore.svg"
+  "./nvd-emu-logo.svg", "./assets/logos/atari.svg", "./assets/logos/playstation.svg", "./assets/logos/sega.svg", "./assets/logos/nec.svg", "./assets/logos/commodore.svg"
 ];
 
 // credentialless allows external images and scripts that don't provide CORP

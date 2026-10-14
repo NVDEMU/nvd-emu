@@ -90,6 +90,7 @@ jobs:
           done
 
           if [[ "$HAS_SIGNING" == "true" ]]; then
+            echo "MACOS_SIGNING_CONFIGURED=true" >> "$GITHUB_ENV"
             echo "Developer ID credentials found; signing and notarizing the macOS app."
             KEYCHAIN_PATH="$RUNNER_TEMP/nvd-emu-signing.keychain-db"
             CERT_PATH="$RUNNER_TEMP/nvd-emu-developer-id.p12"
@@ -136,14 +137,14 @@ jobs:
             xcrun stapler validate nvd-emu-macos-arm64.dmg
             spctl --assess --type execute --verbose=4 "$APP_PATH"
           else
-            echo "::warning::Apple Developer ID/notarization secrets are not configured. Building an unsigned-for-distribution preview only; it will not be published as a macOS release download."
+            echo "MACOS_SIGNING_CONFIGURED=false" >> "$GITHUB_ENV"
+            echo "::warning::Apple Developer ID/notarization secrets are not configured. The native macOS app is built for CI validation but will not be packaged as a downloadable artifact or release asset."
             codesign --force --deep --sign - --timestamp=none "$APP_PATH"
             codesign --verify --deep --strict --verbose=2 "$APP_PATH"
-            ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" nvd-emu-macos-arm64-unsigned.zip
-            # Keep unsigned builds as short-lived CI artifacts only; do not create a public-installation DMG.
           fi
 
       - name: Upload build package
+        if: runner.os != 'macOS' || env.MACOS_SIGNING_CONFIGURED == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: nvd-emu-${{ matrix.package }}

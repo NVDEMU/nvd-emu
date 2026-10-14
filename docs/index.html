@@ -431,8 +431,14 @@
     try {
       const record=await window.NVDLibrary.save(file,systemId);
       file._libraryKey=record.key;
+      if(record.alreadyExists) {
+        const known=gameEntries.some(entry=>entry.key===record.key);
+        if(!known) await loadLibrary();
+        setStatus("This game is already in your library. Kept the existing saved copy; no duplicate was added.","ok");
+        return;
+      }
       gameEntries=gameEntries.filter(entry=>entry.key!==record.key);
-      gameEntries.unshift({key:record.key,systemId,name:record.name,size:record.size,file});
+      gameEntries.unshift({key:record.key,systemId,name:record.name,size:record.size,file,addedAt:record.addedAt||Date.now()});
       $("game-count").textContent=String(gameEntries.length);
       renderLibrary();
       setStatus("Game saved to this browser's persistent library.","ok");

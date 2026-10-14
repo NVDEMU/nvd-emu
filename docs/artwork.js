@@ -61,8 +61,10 @@
   }
   function logoUrl(system) {
     const slug=system.logo||"arcade";
-    if(slug==="arcade")return "./assets/logos/arcade.svg";
-    // Always have a locally generated logo available; external logo host failures must not create text-only cards.
+    const localLogos = new Set(["arcade","atari","playstation","sega","nec","commodore"]);
+    if(localLogos.has(slug)) return "./assets/logos/"+slug+".svg";
+    // Locally generated, system-specific SVG wordmarks keep Nintendo, WonderSwan,
+    // ColecoVision, SNK/Neo Geo, 3DO and MS-DOS readable without external logo hosts.
     return fallbackLogoSvg(system);
   }
   function setSystemLogo(img,system) {

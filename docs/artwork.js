@@ -1,89 +1,64 @@
 (() => {
   "use strict";
-  const logoFiles = {
-    atari: "Atari_logo.svg", nintendo: "Nintendo_logo.svg",
-    playstation: "PlayStation_logo.svg", sega: "SEGA_logo.svg",
-    bandai: "BANDAI.svg", wonderswan: "WonderSwan_logo.svg",
-    nec: "NEC_logo.svg", coleco: "COLECO_VISION_LOGO_(SINGLE_LINE).svg",
-    commodore: "Commodore_logo.svg", snk: "SNK_logo.svg",
-    "3do": "3DO_Logo.svg", microsoft: "MS-DOS_logo.svg"
-  };
-  const brandNames = {
-    atari:"ATARI", nintendo:"Nintendo", playstation:"PLAYSTATION", sega:"SEGA",
-    bandai:"BANDAI", wonderswan:"WonderSwan", nec:"NEC", coleco:"COLECO VISION",
-    commodore:"COMMODORE", snk:"SNK", "3do":"3DO", microsoft:"MS-DOS", arcade:"ARCADE"
-  };
-  const brandColors = {
-    atari:"#ee6725", nintendo:"#d71920", playstation:"#244b8f", sega:"#087bc1",
-    bandai:"#df1c32", wonderswan:"#26264f", nec:"#164b8d", coleco:"#176fba",
-    commodore:"#2457a7", snk:"#009cdd", "3do":"#d4242c", microsoft:"#1b63aa", philips:"#0f58a8", arcade:"#f2b544"
+  const defaultBrandLogos = {
+    atari: "./assets/logos/atari.svg",
+    nintendo: "Nintendo logo.svg",
+    playstation: "./assets/logos/playstation.svg",
+    sega: "./assets/logos/sega.svg",
+    bandai: "BANDAI.svg",
+    wonderswan: "WonderSwan logo.svg",
+    nec: "./assets/logos/nec.svg",
+    coleco: "COLECO VISION LOGO.svg",
+    commodore: "./assets/logos/commodore.svg",
+    snk: "Neo Geo logo.svg",
+    "3do": "3DO Logo.svg",
+    microsoft: "MS-DOS logo.svg",
+    philips: "Philips CD-i logo.svg",
+    arcade: ""
   };
   function displayGameName(name) {
     const clean = String(name || "Unknown game").replace(/\\/g,"/").split("/").pop();
     return clean.replace(/\.[^.]+$/,"").replace(/_/g," ").trim() || "Untitled game";
   }
-  function fallbackLogoSvg(system) {
-    const slug=system.logo||"arcade";
-    const word=brandNames[slug]||String(system.name||"RETRO").toUpperCase();
-    const color=brandColors[slug]||"#7a5bb8";
-    let mark="";
-    if(slug==="atari") {
-      mark='<path d="M45 72 C44 41 60 16 80 10 C100 16 116 41 115 72 M62 67 C63 42 70 29 80 24 C90 29 97 42 98 67 M27 46 C45 45 58 48 65 58 M133 46 C115 45 102 48 95 58" fill="none" stroke="'+color+'" stroke-width="8" stroke-linecap="round"/>';
-    } else if(slug==="nintendo") {
-      mark='<rect x="13" y="24" width="174" height="54" rx="27" fill="none" stroke="'+color+'" stroke-width="6"/><text x="100" y="58" text-anchor="middle" font-family="Arial,sans-serif" font-size="23" font-weight="800" fill="'+color+'">Nintendo</text>';
-    } else if(slug==="sega") {
-      mark='<text x="100" y="65" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="43" font-weight="900" letter-spacing="-2" fill="'+color+'">SEGA</text><path d="M26 72 H174" stroke="'+color+'" stroke-width="3"/>';
-    } else if(slug==="playstation") {
-      mark='<path d="M52 18 L52 78 L69 83 L69 29 Q69 23 78 27 Q89 31 89 39 Q89 48 75 53 L75 61 Q109 50 109 35 Q109 23 88 16 Q65 8 52 18Z" fill="'+color+'"/><path d="M40 79 Q65 64 100 68 Q123 69 139 79 L139 87 Q111 77 82 80 Q58 82 40 89Z" fill="'+color+'"/>';
-    } else if(slug==="bandai") {
-      mark='<rect x="62" y="14" width="76" height="76" rx="7" fill="'+color+'"/><text x="100" y="60" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" font-weight="900" fill="#fff">BANDAI</text>';
-    } else if(slug==="wonderswan") {
-      mark='<path d="M17 34 L38 34 L46 58 L55 34 L70 34 L78 58 L87 34 L102 34 L110 58 L119 34 L135 34 L143 58 L153 34 L181 34 L171 49 L156 49 L148 75 L133 75 L124 49 L115 75 L99 75 L91 49 L82 75 L66 75 L58 49 L49 75 L33 75Z" fill="'+color+'"/><text x="100" y="91" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="800" fill="'+color+'">WonderSwan</text>';
-    } else if(slug==="nec") {
-      mark='<text x="100" y="64" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="47" letter-spacing="1" fill="'+color+'">NEC</text>';
-    } else if(slug==="coleco") {
-      mark='<text x="100" y="50" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="28" fill="'+color+'">COLECO</text><text x="100" y="76" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="21" fill="'+color+'">VISION</text><path d="M24 84 H176" stroke="'+color+'" stroke-width="3"/>';
-    } else if(slug==="commodore") {
-      mark='<circle cx="47" cy="50" r="26" fill="none" stroke="'+color+'" stroke-width="7"/><path d="M27 67 L68 32" stroke="'+color+'" stroke-width="7"/><text x="129" y="58" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="18" fill="'+color+'">COMMODORE</text>';
-    } else if(slug==="snk") {
-      mark='<text x="100" y="65" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="51" letter-spacing="-2" fill="'+color+'">SNK</text>';
-    } else if(slug==="3do") {
-      mark='<ellipse cx="54" cy="48" rx="33" ry="32" fill="none" stroke="'+color+'" stroke-width="8"/><path d="M29 48 H79 M54 23 V73" stroke="'+color+'" stroke-width="5"/><text x="126" y="61" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="35" font-weight="900" fill="'+color+'">3DO</text>';
-    } else if(slug==="microsoft") {
-      mark='<path d="M28 21 L78 21 L78 46 L28 46Z M84 21 L134 21 L134 46 L84 46Z M28 52 L78 52 L78 77 L28 77Z M84 52 L134 52 L134 77 L84 77Z" fill="'+color+'"/><text x="153" y="47" font-family="Arial,sans-serif" font-weight="900" font-size="17" fill="'+color+'">MS-DOS</text>';
-    } else if(slug==="philips") {
-      mark='<circle cx="100" cy="52" r="33" fill="none" stroke="'+color+'" stroke-width="4"/><path d="M40 49 Q60 32 80 49 T120 49 T160 49 M40 59 Q60 42 80 59 T120 59 T160 59" fill="none" stroke="'+color+'" stroke-width="4" stroke-linecap="round"/><text x="100" y="98" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" font-weight="900" fill="'+color+'">PHILIPS</text>';
-    } else if(slug==="arcade") {
-      mark='<rect x="62" y="8" width="76" height="90" rx="9" fill="#1b2030" stroke="'+color+'" stroke-width="5"/><rect x="73" y="18" width="54" height="37" rx="3" fill="'+color+'"/><path d="M82 68 H118 M91 77 H109 M100 61 V68" stroke="'+color+'" stroke-width="5" stroke-linecap="round"/>';
-    } else {
-      mark='<text x="100" y="62" text-anchor="middle" font-family="Arial,sans-serif" font-size="30" font-weight="900" fill="'+color+'">'+word+'</text>';
+  function logoSource(value) {
+    if (!value) return "";
+    if (/^(https?:)?\/\//i.test(value) || value.startsWith("./") || value.startsWith("../")) return value;
+    return "https://commons.wikimedia.org/wiki/Special:FilePath/" + encodeURIComponent(value);
+  }
+  function setSystemLogo(img, system) {
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.referrerPolicy = "no-referrer";
+    if (window.NVD_COI_MODE === "require-corp") img.crossOrigin = "anonymous";
+    img.alt = (system.name || "Console") + " logo";
+    const fallback = img.parentElement && img.parentElement.querySelector(".logo-fallback");
+    const candidates = [...new Set([
+      logoSource(system.logoFile),
+      logoSource(system.brandLogoFile),
+      logoSource(defaultBrandLogos[system.logo])
+    ].filter(Boolean))];
+    let index = 0;
+    if (fallback) {
+      fallback.textContent = "Logo unavailable";
+      fallback.setAttribute("aria-label", "Logo unavailable for " + (system.name || "this system"));
+      fallback.style.display = "none";
     }
-    const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 104"><rect width="200" height="104" rx="9" fill="#fbfaf7"/>'+mark+'</svg>';
-    return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
-  }
-  function logoUrl(system) {
-    const slug=system.logo||"arcade";
-    const localLogos = new Set(["arcade","atari","playstation","sega","nec","commodore"]);
-    if(localLogos.has(slug)) return "./assets/logos/"+slug+".svg";
-    // Locally generated, system-specific SVG wordmarks keep Nintendo, WonderSwan,
-    // ColecoVision, SNK/Neo Geo, 3DO and MS-DOS readable without external logo hosts.
-    return fallbackLogoSvg(system);
-  }
-  function setSystemLogo(img,system) {
-    img.loading="lazy";
-    img.decoding="async";
-    img.referrerPolicy="no-referrer";
-    img.alt=(system.name||"Console")+" logo";
-    const fallback=img.parentElement&&img.parentElement.querySelector(".logo-fallback");
-    let fallbackTried=false;
-    img.onload=()=>{img.style.display="block";if(fallback)fallback.style.display="none";};
-    img.onerror=()=>{
-      if(!fallbackTried){fallbackTried=true;img.src=fallbackLogoSvg(system);return;}
-      img.style.display="none";
-      if(fallback)fallback.style.display="grid";
+    img.onload = () => {
+      img.style.display = "block";
+      if (fallback) fallback.style.display = "none";
     };
-    const src=system.logoUrl||logoUrl(system);
-    img.src=src||fallbackLogoSvg(system);
+    img.onerror = () => {
+      index += 1;
+      if (index < candidates.length) {
+        img.src = candidates[index];
+        return;
+      }
+      // Never fabricate a replacement logo. A missing asset gets a neutral status label.
+      img.style.display = "none";
+      if (fallback) fallback.style.display = "grid";
+    };
+    if (candidates.length) img.src = candidates[0];
+    else img.onerror();
   }
   function candidatesFor(entry,system) {
     const fileName=String(entry.name||"").replace(/\\/g,"/").split("/").pop();
@@ -146,5 +121,5 @@
     };
     if(urls.length)img.src=urls[0];else img.onerror();
   }
-  window.NVD_ARTWORK={setSystemLogo,setBoxArt,displayGameName,fallbackLogoSvg};
+  window.NVD_ARTWORK={setSystemLogo,setBoxArt,displayGameName};
 })();

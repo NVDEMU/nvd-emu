@@ -77,6 +77,12 @@ jobs:
           APP_PATH="dist/nvd-emu.app"
           test -d "$APP_PATH"
           macdeployqt "$APP_PATH" -always-overwrite
+          # Re-sign the fully assembled bundle so copied Qt frameworks and plugins
+          # have a consistent signature. This is an ad-hoc signature, not Developer ID
+          # signing or notarization; it prevents a malformed bundle signature but
+          # does not eliminate Gatekeeper's unidentified-developer warning.
+          codesign --force --deep --sign - --timestamp=none "$APP_PATH"
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
           ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" nvd-emu-macos-arm64.zip
           hdiutil create -volname "nvd-emu" -srcfolder "$APP_PATH" -ov -format UDZO nvd-emu-macos-arm64.dmg
 

@@ -71,20 +71,77 @@ jobs:
       - name: Package macOS Apple Silicon
         if: runner.os == 'macOS'
         shell: bash
+        env:
+          APPLE_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           set -euo pipefail
           cmake --install build --prefix dist
           APP_PATH="dist/nvd-emu.app"
           test -d "$APP_PATH"
           macdeployqt "$APP_PATH" -always-overwrite
-          # Re-sign the fully assembled bundle so copied Qt frameworks and plugins
-          # have a consistent signature. This is an ad-hoc signature, not Developer ID
-          # signing or notarization; it prevents a malformed bundle signature but
-          # does not eliminate Gatekeeper's unidentified-developer warning.
-          codesign --force --deep --sign - --timestamp=none "$APP_PATH"
-          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
-          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" nvd-emu-macos-arm64.zip
-          hdiutil create -volname "nvd-emu" -srcfolder "$APP_PATH" -ov -format UDZO nvd-emu-macos-arm64.dmg
+
+          HAS_SIGNING="true"
+          for value in "$APPLE_CERTIFICATE_P12_BASE64" "$APPLE_CERTIFICATE_PASSWORD" "$APPLE_ID" "$APPLE_APP_SPECIFIC_PASSWORD" "$APPLE_TEAM_ID"; do
+            if [[ -z "$value" ]]; then HAS_SIGNING="false"; fi
+          done
+
+          if [[ "$HAS_SIGNING" == "true" ]]; then
+            echo "Developer ID credentials found; signing and notarizing the macOS app."
+            KEYCHAIN_PATH="$RUNNER_TEMP/nvd-emu-signing.keychain-db"
+            CERT_PATH="$RUNNER_TEMP/nvd-emu-developer-id.p12"
+            KEYCHAIN_PASSWORD="$(openssl rand -hex 24)"
+            trap 'security delete-keychain "$KEYCHAIN_PATH" >/dev/null 2>&1 || true; rm -f "$CERT_PATH"' EXIT
+
+            printf '%s' "$APPLE_CERTIFICATE_P12_BASE64" | base64 --decode > "$CERT_PATH"
+            security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+            security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+            security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+            security import "$CERT_PATH" -k "$KEYCHAIN_PATH" -P "$APPLE_CERTIFICATE_PASSWORD" -A -f pkcs12
+            security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+            security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+            SIGNING_IDENTITY="$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | awk -F '"' '/Developer ID Application:/ { print $2; exit }')"
+            if [[ -z "$SIGNING_IDENTITY" ]]; then
+              echo "::error::No Developer ID Application identity was found in APPLE_CERTIFICATE_P12_BASE64."
+              exit 1
+            fi
+
+            # Developer ID signature with hardened runtime and secure timestamp.
+            codesign --force --deep --options runtime --timestamp --sign "$SIGNING_IDENTITY" "$APP_PATH"
+            codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+
+            # Submit the app bundle (contained in a ZIP) to Apple's notary service.
+            ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$RUNNER_TEMP/nvd-emu-for-notarization.zip"
+            xcrun notarytool submit "$RUNNER_TEMP/nvd-emu-for-notarization.zip" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --wait
+            xcrun stapler staple "$APP_PATH"
+            xcrun stapler validate "$APP_PATH"
+
+            # Rebuild final distributables only after stapling the app ticket.
+            ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" nvd-emu-macos-arm64.zip
+            hdiutil create -volname "nvd-emu" -srcfolder "$APP_PATH" -ov -format UDZO nvd-emu-macos-arm64.dmg
+            xcrun notarytool submit nvd-emu-macos-arm64.dmg \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --wait
+            xcrun stapler staple nvd-emu-macos-arm64.dmg
+            xcrun stapler validate nvd-emu-macos-arm64.dmg
+            spctl --assess --type execute --verbose=4 "$APP_PATH"
+          else
+            echo "::warning::Apple Developer ID/notarization secrets are not configured. Building an unsigned-for-distribution preview only; it will not be published as a macOS release download."
+            codesign --force --deep --sign - --timestamp=none "$APP_PATH"
+            codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+            ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" nvd-emu-macos-arm64-unsigned.zip
+            hdiutil create -volname "nvd-emu" -srcfolder "$APP_PATH" -ov -format UDZO nvd-emu-macos-arm64-unsigned.dmg
+          fi
 
       - name: Upload build package
         uses: actions/upload-artifact@v4
@@ -103,8 +160,11 @@ jobs:
       github.event_name != 'pull_request' &&
       (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      MACOS_SIGNING_CONFIGURED: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 != '' && secrets.APPLE_CERTIFICATE_PASSWORD != '' && secrets.APPLE_ID != '' && secrets.APPLE_APP_SPECIFIC_PASSWORD != '' && secrets.APPLE_TEAM_ID != '' }}
     steps:
-      - name: Download platform packages
+      - name: Download build packages
         uses: actions/download-artifact@v4
         with:
           pattern: nvd-emu-*
@@ -120,11 +180,28 @@ jobs:
           prerelease: true
           make_latest: false
           overwrite_files: true
-          files: artifacts/*
+          files: artifacts/nvd-emu-windows-x64.zip
           body: |
             Automated nvd-emu development build from the latest commit on main.
 
-            This is an early frontend milestone. It does not yet include a playable emulation core.
+            The Windows build is attached. A macOS release download is published only after Developer ID signing and Apple notarization are configured and validated.
+            This is an early frontend milestone and does not yet include a playable emulation core.
+
+      - name: Remove outdated, unnotarized Nightly macOS downloads
+        if: github.ref == 'refs/heads/main' && env.MACOS_SIGNING_CONFIGURED != 'true'
+        run: |
+          gh release delete-asset nightly nvd-emu-macos-arm64.dmg --yes || true
+          gh release delete-asset nightly nvd-emu-macos-arm64.zip --yes
+
+      - name: Attach notarized Nightly macOS downloads
+        if: github.ref == 'refs/heads/main' && env.MACOS_SIGNING_CONFIGURED == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly
+          overwrite_files: true
+          files: |
+            artifacts/nvd-emu-macos-arm64.dmg
+            artifacts/nvd-emu-macos-arm64.zip
 
       - name: Publish Stable release
         if: startsWith(github.ref, 'refs/tags/v')
@@ -134,8 +211,27 @@ jobs:
           prerelease: false
           make_latest: true
           overwrite_files: true
-          files: artifacts/*
+          files: artifacts/nvd-emu-windows-x64.zip
           body: |
             nvd-emu ${{ github.ref_name }} release.
 
-            See the release notes and README for current implementation status.
+            A macOS release download is published only after Developer ID signing and Apple notarization are configured and validated.
+            See the README for current implementation status.
+
+      - name: Remove outdated, unnotarized Stable macOS downloads
+        if: startsWith(github.ref, 'refs/tags/v') && env.MACOS_SIGNING_CONFIGURED != 'true'
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release delete-asset "$RELEASE_TAG" nvd-emu-macos-arm64.dmg --yes || true
+          gh release delete-asset "$RELEASE_TAG" nvd-emu-macos-arm64.zip --yes
+
+      - name: Attach notarized Stable macOS downloads
+        if: startsWith(github.ref, 'refs/tags/v') && env.MACOS_SIGNING_CONFIGURED == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          overwrite_files: true
+          files: |
+            artifacts/nvd-emu-macos-arm64.dmg
+            artifacts/nvd-emu-macos-arm64.zip

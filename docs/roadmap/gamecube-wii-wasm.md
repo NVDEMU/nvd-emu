@@ -15,7 +15,7 @@ Repository: https://github.com/Torashi1069/emu.nintendo.wii.gecko
 - Written in Rust; GPL-3.0.
 - Its README documents a browser WebAssembly crate and the command `wasm-pack build crates/web --target web --out-dir pkg --release`.
 - The upstream project reports that it is still in development, and that many games have varying visual glitches or are outright broken.
-- The public web frontend currently exposes IPL/DOL and DSP IROM file inputs. That proves a browser-oriented build exists, but does not by itself prove a polished retail-disc launcher, full game library, reliable save states, or production compatibility.
+- The public web frontend currently exposes IPL/DOL and DSP IROM file inputs; its web crate currently constructs the GameCube implementation. That proves a browser-oriented GameCube target exists, but does not by itself prove a polished retail-disc launcher, full game library, reliable save states, or production compatibility. Wii browser support would need separate work.
 - The upstream engine expects user-supplied system files for appropriate paths. nvd-emu must not bundle proprietary IPL/DSP/BIOS/system files.
 
 This is the strongest concrete browser/WASM candidate to evaluate first, subject to an upstream build/test and license review. It is not integrated into nvd-emu yet.

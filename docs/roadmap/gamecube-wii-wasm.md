@@ -8,33 +8,39 @@ This repository's current web engine, EmulatorJS, is designed for much lighter r
 
 ## Candidates evaluated
 
-### 1. Gecko's browser/WASM build
+### 1. RetroArch / Libretro Dolphin core
+
+The ordinary Dolphin Libretro core is a native C++ core that expects desktop graphics backends such as OpenGL, Vulkan or Direct3D 11 and a Dolphin `Sys` directory. It is not a ready-made browser/WebAssembly package that nvd-emu can simply load. Libretro's core documentation currently lists Dolphin among unavailable web cores and warns about extremely poor performance in that environment.
+
+**Conclusion:** do not add `dolphin` as an EmulatorJS system id or expect the desktop RetroArch core download to work in a webpage. A browser port needs a separate, intentionally built WASM target and a graphics/input integration layer.
+
+### 2. Experimental `wasm-dolphin` port
+
+Repository: https://github.com/dougchansan/wasm-dolphin
+
+This is a concrete browser-oriented Dolphin-derived experiment and is worth a reproducible build/test before writing another port from scratch. Its July 2026 performance audit reports that one measured Melee scene reached approximately 95–97% emulation speed with the software renderer, but only about 10.7 distinct visual frames per second. The same audit says the experimental hardware-WebGPU route displayed a diagnostic pattern rather than a valid game frame, with no real presentation/audio output. Its own audit also calls out incomplete source/patch provenance.
+
+**Conclusion:** promising as a GameCube proof-of-concept, not production-ready. Before integrating, pin a reproducible source commit, reproduce its browser build, verify the source/license/patch chain, measure frame pacing and audio, test actual game input, and establish Wii-game support separately.
+
+### 3. Gecko's browser/WebAssembly target
 
 Repository: https://github.com/Torashi1069/emu.nintendo.wii.gecko
 
-- Written in Rust; GPL-3.0.
-- Its README documents a browser WebAssembly crate and the command `wasm-pack build crates/web --target web --out-dir pkg --release`.
-- The upstream project reports that it is still in development, and that many games have varying visual glitches or are outright broken.
-- The public web frontend currently exposes IPL/DOL and DSP IROM file inputs; its web crate currently constructs the GameCube implementation. That proves a browser-oriented GameCube target exists, but does not by itself prove a polished retail-disc launcher, full game library, reliable save states, or production compatibility. Wii browser support would need separate work.
-- The upstream engine expects user-supplied system files for appropriate paths. nvd-emu must not bundle proprietary IPL/DSP/BIOS/system files.
+Gecko is an experimental Rust GameCube/Wii emulator with a `wasm-bindgen` browser target. Its current project documentation lists ISO/RVZ support and Wii features for the emulator, but that does not prove those paths are all exposed by its web frontend. The public browser demo currently asks for a GameCube IPL/DOL file and optional DSP IROM; it does not expose the same complete retail-disc library flow as the native app.
 
-This is the strongest concrete browser/WASM candidate to evaluate first, subject to an upstream build/test and license review. It is not integrated into nvd-emu yet.
+Gecko also requires user-provided system files for the appropriate paths (including GameCube IPL and DSP files), so nvd-emu must not bundle proprietary firmware. It is GPL-3.0; review the actual current license and source-distribution obligations before incorporating or redistributing any of it.
 
-### 2. Dolphin
-
-Official repository: https://github.com/dolphin-emu/dolphin
-
-Dolphin is a mature native GameCube/Wii emulator, but porting its full runtime to browser WASM is a substantial project. A repository named "Dolphin Web" exists, but its code history inspected in October 2026 did not demonstrate a maintained, ready-to-use production browser package; don't assume a fork name proves browser support.
+**Conclusion:** evaluate its current WASM crate, but test the exact browser build and retail-disc/Wii input path rather than inferring web feature parity from the native app.
 
 ## Integration milestones
 
-1. **Build and inspect upstream Gecko's WASM target in CI.** Record the exact source commit, licensing, output artifacts and browser requirements. Do not publish an opaque prebuilt binary.
-2. **Run a homebrew/DOL smoke test in browser.** Verify keyboard, gamepad, renderer, audio, pause and browser memory limits.
-3. **Test GameCube media loading.** Establish whether the WASM frontend can load a legally obtained ISO/RVZ directly, rather than treating a DOL test as retail game support.
-4. **Add nvd-emu launcher integration.** Game selection, progress/status, per-title settings, keyboard and controller remapping, save import/export, and clear compatibility labels.
-5. **Add Wii features.** Wiimote pointer, motion/tilt, shake, Nunchuk/Classic Controller extension mappings and motion fallback controls.
-6. **Implement persistent save and state support only when exposed by the core.** Use IndexedDB for appropriate saves, user-exportable files for backup, and explicit user controls to clear data.
-7. **Run a compatibility suite.** Start with open homebrew and user-supplied legally obtained dumps; track boots/menu/in-game/playable separately. Do not publish performance or compatibility claims without measured results.
+1. **Build both browser candidates reproducibly in CI.** Pin source commits for `wasm-dolphin` and Gecko; record licenses, patch chains, asset sizes and browser requirements. Never publish an opaque prebuilt binary.
+2. **Run a GameCube smoke test in a real browser.** Test homebrew first, then a user-supplied legally obtained disc image. Verify renderer, audio, pause, input and memory use.
+3. **Test Wii separately.** Prove that the browser build can load a retail Wii ISO/RVZ and emulate the IOS/input paths required by actual games; native app support alone is not proof of web support.
+4. **Benchmark on ordinary hardware.** Measure emulation speed, unique visual frames, audio gaps and input latency on both a Mac and a Windows PC. Reject any branch that only boots a demo or test pattern.
+5. **Add nvd-emu launcher integration.** Game selection, progress/status, per-title settings, keyboard/controller remapping, save import/export, and clear compatibility labels.
+6. **Implement persistent saves and state support only when exposed by the engine.** Use IndexedDB for appropriate saves, user-exportable files for backup, and explicit user controls to clear data.
+7. **Run a compatibility suite.** Track boots/menu/in-game/playable separately, test Wii motion and pointer controls, and publish measured compatibility results rather than assumptions.
 
 ## Important limitations
 
@@ -46,4 +52,4 @@ Dolphin is a mature native GameCube/Wii emulator, but porting its full runtime t
 
 ## Current status
 
-**Research candidate identified; not playable inside nvd-emu Web yet.** The UI labels this honestly. The next technical task is building and running a reproducible Gecko WASM smoke test, then deciding whether it can support disc-based retail games and the required state/input features.
+**Research candidates identified; neither engine is integrated into nvd-emu Web.** RetroArch Dolphin is not a drop-in browser core. The next technical task is to build and compare the experimental wasm-dolphin and Gecko WASM targets in CI, then test retail-disc loading, real gameplay, Wii support, controller inputs, save-state support and measured performance before selecting an integration path.

@@ -650,7 +650,7 @@ QString MainWindow::guessSystem(const QString &path) const
 {
     const QString extension = QFileInfo(path).suffix().toLower();
 
-    if ({"nes", "fds", "unf", "unif"}.contains(extension))
+    if (QStringList{"nes", "fds", "unf", "unif"}.contains(extension))
         return QStringLiteral("NES / Famicom");
     if (extension == "gb")
         return QStringLiteral("Game Boy");
@@ -660,19 +660,19 @@ QString MainWindow::guessSystem(const QString &path) const
         return QStringLiteral("Game Boy Advance");
     if (extension == "nds")
         return QStringLiteral("Nintendo DS");
-    if ({"3ds", "cia"}.contains(extension))
+    if (QStringList{"3ds", "cia"}.contains(extension))
         return QStringLiteral("Nintendo 3DS");
-    if ({"sms", "gg"}.contains(extension))
+    if (QStringList{"sms", "gg"}.contains(extension))
         return QStringLiteral("Master System / Game Gear");
-    if ({"md", "gen", "32x"}.contains(extension))
+    if (QStringList{"md", "gen", "32x"}.contains(extension))
         return QStringLiteral("Mega Drive / Genesis family");
-    if ({"sfc", "smc"}.contains(extension))
+    if (QStringList{"sfc", "smc"}.contains(extension))
         return QStringLiteral("Super Nintendo");
-    if ({"n64", "z64", "v64"}.contains(extension))
+    if (QStringList{"n64", "z64", "v64"}.contains(extension))
         return QStringLiteral("Nintendo 64");
-    if ({"gcm", "rvz", "wbfs", "wud", "wux"}.contains(extension))
+    if (QStringList{"gcm", "rvz", "wbfs", "wud", "wux"}.contains(extension))
         return QStringLiteral("Console disc image");
-    if ({"iso", "cso", "chd", "cue", "pbp"}.contains(extension))
+    if (QStringList{"iso", "cso", "chd", "cue", "pbp"}.contains(extension))
         return QStringLiteral("Disc image / container");
     if (extension == "zip")
         return QStringLiteral("Archive (contents unverified)");

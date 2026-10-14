@@ -1,0 +1,25 @@
+# CMake
+/build/
+/cmake-build-*/
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
+/Makefile
+/Testing/
+
+# IDEs
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Packaging
+/dist/
+/install/
+/release/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db

@@ -27,6 +27,32 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Validate web app assets and inline JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          html = Path("docs/index.html").read_text(encoding="utf-8")
+          manifest = json.loads(Path("docs/manifest.webmanifest").read_text(encoding="utf-8"))
+          scripts = re.findall(r"<script(?:\\s[^>]*)?>([\\s\\S]*?)</script>", html)
+          if len(scripts) != 1:
+              raise SystemExit(f"Expected exactly one inline page script, found {len(scripts)}")
+          if manifest.get("name") != "nvd-emu" or manifest.get("start_url") != "./":
+              raise SystemExit("The PWA manifest is missing required nvd-emu fields")
+          for required in ("atari2600", "nes", "gb", "gba", "snes", "segaMS", "segaMD"):
+              if required not in html:
+                  raise SystemExit(f"Missing configured emulator system: {required}")
+          Path("/tmp/nvd-emu-web-inline.js").write_text(scripts[0], encoding="utf-8")
+          print("Manifest and required system mappings validated.")
+          PY
+          node --check /tmp/nvd-emu-web-inline.js
+          test -f docs/nvd-emu-logo.svg
+          test -f docs/sw.js
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 

@@ -15,7 +15,7 @@
     <div class="eyebrow" style="margin-top:22px">SPACE USED</div><div class="storage-meter"><span id="storage-bar"></span></div><div id="storage-usage" class="muted" style="font-size:12px">Checking usage…</div>
     <div id="settings-status" class="status" role="status">Checking local database…</div>
     <div style="margin-top:18px"><div class="eyebrow">EXPERIMENTAL 3DS THREADING</div><h2 id="isolation-state" style="font-size:18px;margin-top:8px">Checking…</h2><p id="isolation-note" style="font-size:12px;margin:7px 0 0">3DS needs SharedArrayBuffer through cross-origin isolation. Orion uses the require-corp policy path; the experimental core still needs a real game test.</p><p id="isolation-details" style="font-size:11px;margin:8px 0 0;overflow-wrap:anywhere;line-height:1.6">Collecting browser diagnostics…</p></div>
-    <div class="page-toolbar"><button id="request-persistence" class="primary">Request persistent storage</button><a class="button" href="./library.html">Manage game library</a></div>
+    <div class="page-toolbar"><button id="request-persistence" class="primary">Request persistent storage</button><a class="button" href="./library.html">Manage game library</a><a class="button" href="./player.html?system=3ds">Open 3DS player test</a></div>
   </div></section>
   <section class="card"><div class="card-head"><h2>Privacy and compatibility</h2></div><div class="card-body">
     <div class="notice">ROM files and the library database stay in your browser profile on this device. NVD-EMU does not upload your selected games to its GitHub repository. EmulatorJS core files are downloaded from its CDN, and console/game artwork is retrieved from external image sources.</div>
@@ -33,15 +33,10 @@
   function updateIsolation(){
     const isolated=window.crossOriginIsolated===true;
     const sab=typeof SharedArrayBuffer==="function";
-    const ready=isolated&&sab;
-    $("isolation-state").textContent=ready?"Available — 3DS can try to launch":"Not available — 3DS will not start yet";
-    $("isolation-note").textContent=ready
-      ?"Orion reports cross-origin isolation and SharedArrayBuffer. This only confirms the browser prerequisite; the Azahar core and individual games still need testing."
-      :"NVD-EMU is trying the require-corp path for Orion/WebKit. If this remains unavailable after the page reloads, the browser or school policy may block the service-worker headers needed by the threaded core.";
-    const swSupported=!!navigator.serviceWorker;
-    const swControls=!!(navigator.serviceWorker&&navigator.serviceWorker.controller);
+    $("isolation-state").textContent="Enabled only on the dedicated 3DS player";
+    $("isolation-note").textContent="This settings page intentionally stays outside cross-origin isolation so third-party game covers can load normally. Open the dedicated 3DS player to check whether Orion allows the required isolation and SharedArrayBuffer.";
     $("isolation-details").textContent=[
-      "crossOriginIsolated="+isolated,
+      "This page isolated="+isolated,
       "SharedArrayBuffer="+sab,
       "secureContext="+(window.isSecureContext===true),
       "serviceWorkerSupported="+swSupported,

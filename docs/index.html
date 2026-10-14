@@ -349,7 +349,8 @@
     $("system-count").textContent = String(Object.keys(systems).length);
     $("settings-system-count").textContent = Object.keys(systems).length + " configured through EmulatorJS";
   }
-  renderSystemCatalog();\n  loadLibrary();
+  renderSystemCatalog();
+  loadLibrary();
   let gameEntries = [];
   let launches = 0;
 
@@ -441,9 +442,6 @@
     } catch(error) { setStatus("Game selected, but browser storage failed: "+error.message,"error"); }
   }
   async function loadLibrary() {
-    try {
-      const records=await storageTransaction("readonly",store=>{});
-    } catch(_) {}
     try {
       const records=await new Promise((resolve,reject)=>openLibraryDB().then(db=>{
         const tx=db.transaction(LIBRARY_STORE,"readonly"),req=tx.objectStore(LIBRARY_STORE).getAll();
@@ -623,7 +621,8 @@
 
   fileInput.addEventListener("change", () => {
     const file = fileInput.files && fileInput.files[0];
-    setSelectedFile(file || null);\n    if (file) recordEntry(file, select.value);
+    setSelectedFile(file || null);
+    if (file) recordEntry(file, select.value);
   });
   select.addEventListener("change", () => {
     $("test-2600").classList.toggle("hidden", select.value !== "atari2600");

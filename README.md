@@ -17,7 +17,7 @@ If the site is not published yet, go to [GitHub Pages settings](https://github.c
 
 ## Browser systems
 
-NVD-EMU has **40 configured browser system profiles** across retro consoles, handhelds, arcade machines and home computers. The catalogue includes Atari 2600/5200/7800/Lynx/Jaguar; NES/Famicom and Famicom Disk System; SNES; Game Boy/Game Boy Color; Game Boy Advance; Virtual Boy; Nintendo 64 and DS; PlayStation and PSP; Sega Master System/Game Gear/Mega Drive/Sega CD/32X/Saturn/Dreamcast; PC Engine/SuperGrafx; WonderSwan; ColecoVision; Commodore 64/128/PET/Plus/4/VIC-20/Amiga; Neo Geo Pocket/Color; a Neo Geo AES/MVS arcade profile; PC-FX; 3DO; MS-DOS; FinalBurn Neo arcade; MAME 2003; and an **experimental 3DS profile** using EmulatorJS's nightly Azahar core.
+NVD-EMU has **40 configured browser system profiles** across retro consoles, handhelds, arcade machines and home computers. The catalogue includes Atari 2600/5200/7800/Lynx/Jaguar; NES/Famicom and Famicom Disk System; SNES; Game Boy/Game Boy Color; Game Boy Advance; Virtual Boy; Nintendo 64 and DS; PlayStation and PSP; Sega Master System/Game Gear/Mega Drive/Sega CD/32X/Saturn; PC Engine/SuperGrafx; Philips CD-i (experimental); WonderSwan; ColecoVision; Commodore 64/128/PET/Plus/4/VIC-20/Amiga; Neo Geo Pocket/Color; a Neo Geo AES/MVS arcade profile; PC-FX; 3DO; MS-DOS; FinalBurn Neo arcade; MAME 2003; and an **experimental 3DS profile** using EmulatorJS's nightly Azahar core.
 
 System cards use console/company artwork and local SVG logos or custom logos for brands without a dependable image source. Game cover art is searched by ROM filename in the [Libretro thumbnails collection](https://github.com/libretro-thumbnails/libretro-thumbnails). Files with well-known names have the best chance of matching; if a cover cannot be found, the library uses a game-title card instead of showing the console logo as fake game art.
 
@@ -41,7 +41,7 @@ This is an early experiment, not a promise of playable compatibility. It require
 
 NVD-EMU is static HTML, CSS and JavaScript. [EmulatorJS](https://github.com/EmulatorJS/EmulatorJS) supplies the WebAssembly emulation cores. The game player exposes the EmulatorJS toolbar for controller mapping, save/load states, quick save/load, screenshots, audio and fullscreen where supported. The PlayStation profile requests DualShock input and allows an optional BIOS file from the user.
 
-GameCube and Wii are not integrated playable systems. See the [browser feasibility roadmap](docs/roadmap/gamecube-wii-wasm.md) for why a full Dolphin-derived browser port needs separate engineering and performance testing.
+Sega Dreamcast, GameCube and Wii are research targets rather than advertised working systems: the current public EmulatorJS core list does not document a Dreamcast core, and a full Dolphin-derived browser port needs separate engineering and performance testing. See the [browser feasibility roadmap](docs/roadmap/gamecube-wii-wasm.md).
 
 ## Project scope
 

@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101114">
 <meta name="description" content="Manage NVD-EMU browser storage, recover orphaned game data, and configure playback defaults.">
-<title>Settings · nvd-emu</title><link rel="icon" href="./nvd-emu-logo.svg" type="image/svg+xml"><link rel="manifest" href="./manifest.webmanifest"><script src="./coi-bootstrap.js"></script><link rel="stylesheet" href="./site.css">
+<title>Settings · nvd-emu</title><link rel="icon" href="./nvd-emu-logo.svg" type="image/svg+xml"><link rel="manifest" href="./manifest.webmanifest"><script src="./coi-bootstrap.js?v=20261014-3"></script><link rel="stylesheet" href="./site.css">
 <style>
 .settings-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:4px 0 20px}.settings-metric{padding:15px;border:1px solid #30313a;border-radius:12px;background:rgba(255,255,255,.025);min-width:0}.settings-metric .eyebrow{font-size:10px}.settings-metric strong{display:block;font-size:22px;margin-top:8px;overflow-wrap:anywhere}.settings-help{font-size:12px;line-height:1.65;color:#a9abb6}.settings-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(190px,290px);gap:18px;align-items:center;padding:14px 0;border-bottom:1px solid #2c2d35}.settings-row:last-child{border-bottom:0}.settings-row label{font-size:13px;font-weight:650}.settings-row select,.settings-row input[type=range]{width:100%;margin-top:8px}.danger-zone{border-color:#754147!important}.danger-action{background:#842b32!important;color:#fff!important;border:1px solid #b64d55!important}.danger-action:hover{background:#a2313b!important}.recovery-notice{padding:13px 15px;background:rgba(220,41,43,.09);border:1px solid #63363a;border-radius:10px;color:#e2c4c7;font-size:12px;line-height:1.65;margin:12px 0 16px}.inline-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.inventory{font-size:12px;line-height:1.7;overflow-wrap:anywhere}details.diagnostics{border:1px solid #30313a;border-radius:10px;padding:12px 14px;margin-top:14px}details.diagnostics summary{cursor:pointer;font-size:12px;font-weight:650}#diagnostics-output{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;font-size:11px;color:#a9abb6}@media(max-width:700px){.settings-row{grid-template-columns:1fr;gap:8px}}
 </style></head><body><div class="shell"><aside>
@@ -29,7 +29,7 @@
 <section class="card"><div class="card-head"><h2>App-owned storage inventory</h2></div><div class="card-body"><p class="settings-help">Storage estimates cover the entire origin, not just NVD-EMU. The recovery operation leaves unrelated app resources alone.</p>
 <div class="inventory"><strong>Detected NVD-EMU IndexedDB databases:</strong><div id="app-db-list">Not scanned yet.</div><strong style="display:block;margin-top:9px">Detected NVD-EMU caches:</strong><div id="app-cache-list">Not scanned yet.</div><strong style="display:block;margin-top:9px">Other visible IndexedDB names (left untouched):</strong><div id="other-db-list">Not scanned yet.</div></div></div></section>
 <div class="footer">NVD-EMU is a browser frontend, not a ROM download service. Keep backups of save files and use games you are legally entitled to use.</div>
-</main></div><script src="./systems-data.js"></script><script src="./storage.js"></script>
+</main></div><script src="./systems-data.js?v=20261014-3"></script><script src="./storage.js?v=20261014-3"></script>
 <script>
 (() => {
  const $=id=>document.getElementById(id),PREFS_KEY="nvd-emu-settings-v1";
@@ -37,10 +37,24 @@
  const readPrefs=()=>{try{return JSON.parse(localStorage.getItem(PREFS_KEY)||"{}")||{};}catch(_){return {};}};
  function writePrefs(p){try{localStorage.setItem(PREFS_KEY,JSON.stringify(p));$("preferences-status").textContent="Preferences saved in this browser.";}catch(error){$("preferences-status").textContent="Could not save preferences: "+error.message;}}
  function setStatus(id,message,kind){$(id).textContent=message;$(id).className="status "+(kind||"");}
+ async function ensureNVDLibrary(){
+  if(window.NVDLibrary&&typeof window.NVDLibrary.isPersistent==="function"&&typeof window.NVDLibrary.clearAllAppData==="function")return window.NVDLibrary;
+  await new Promise((resolve,reject)=>{
+   const script=document.createElement("script");
+   script.src="./storage.js?v=20261014-3";
+   script.onload=()=>window.NVDLibrary&&typeof window.NVDLibrary.isPersistent==="function"&&typeof window.NVDLibrary.clearAllAppData==="function"
+    ?resolve():reject(new Error("The updated browser-storage helper loaded without its recovery API. Reload Settings to retry."));
+   script.onerror=()=>reject(new Error("Could not load the updated storage helper. Refresh this page and check that the site is online."));
+   document.head.append(script);
+  });
+  return window.NVDLibrary;
+ }
  const systems=window.NVD_SYSTEMS||{};
  for(const [id,system]of Object.entries(systems).sort((a,b)=>a[1].name.localeCompare(b[1].name))){const option=document.createElement("option");option.value=id;option.textContent=system.name;$("default-system").append(option);}
  const prefs=readPrefs();$("default-system").value=systems[prefs.defaultSystem]?prefs.defaultSystem:(systems.nes?"nes":Object.keys(systems)[0]);$("default-volume").value=Number.isFinite(Number(prefs.volume))?Math.max(0,Math.min(100,Number(prefs.volume))):80;$("volume-label").textContent=$("default-volume").value+"%";$("request-persist-on-load").checked=prefs.requestPersistentStorage===true;
  async function refresh(){
+  setStatus("settings-status","Loading browser-storage helper…");
+  await ensureNVDLibrary();
   setStatus("settings-status","Scanning visible library and app storage…");
   let inventory={databases:[],appDatabases:[],appCaches:[],databaseEnumerationSupported:false};try{inventory=await window.NVDLibrary.inspectAppStorage();}catch(error){setStatus("settings-status","Could not inspect app storage: "+error.message,"error");}
   let games=null;try{games=await window.NVDLibrary.list();$("saved-count").textContent=String(games.length);}catch(error){$("saved-count").textContent="Unavailable";setStatus("settings-status","Visible library unavailable: "+error.message,"error");}

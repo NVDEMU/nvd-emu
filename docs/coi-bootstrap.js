@@ -5,6 +5,10 @@
 (() => {
   "use strict";
   const MODE_KEY = "nvd-emu-coi-mode";
+  const userAgent = navigator.userAgent || "";
+  // Orion and Safari use WebKit and need the broadly supported require-corp policy.
+  const webKitBrowser = /AppleWebKit/i.test(userAgent) && !/(Chrome|Chromium|CriOS|Edg|OPR)/i.test(userAgent);
+  const preferredMode = webKitBrowser ? "require-corp" : "credentialless";
   const getMode = () => {
     try { return sessionStorage.getItem(MODE_KEY) || ""; } catch (_) { return ""; }
   };
@@ -25,8 +29,10 @@
     return;
   }
 
-  const currentMode = getMode();
-  window.NVD_COI_MODE = currentMode || "credentialless";
+  const storedMode = getMode();
+  const currentMode = webKitBrowser ? "require-corp" : storedMode;
+  const startupMode = currentMode || preferredMode;
+  window.NVD_COI_MODE = startupMode;
   let restarting = false;
 
   function applyWorkerMode(mode, credentialless) {
@@ -58,20 +64,19 @@
   }
 
   if (sw.controller) {
-    if (!currentMode) {
-      applyWorkerMode("credentialless", true);
-    } else if (currentMode === "credentialless") {
-      // Safari does not currently implement COEP: credentialless. Try require-corp once.
+    if (!storedMode || storedMode !== startupMode) {
+      applyWorkerMode(startupMode, startupMode === "credentialless");
+    } else if (storedMode === "credentialless" && !webKitBrowser) {
+      // Try the more widely supported require-corp policy if credentialless failed.
       applyWorkerMode("require-corp", false);
     }
-    // If the require-corp retry also fails, leave the page usable and expose
-    // the failure in Settings instead of causing a reload loop.
+    // Stop retrying after one require-corp attempt; Settings exposes the diagnostic state.
     return;
   }
 
   sw.addEventListener("controllerchange", () => {
     if (window.crossOriginIsolated === true) return;
-    applyWorkerMode("credentialless", true);
+    applyWorkerMode(startupMode, startupMode === "credentialless");
   }, { once: true });
   sw.register("./sw.js").catch(error => {
     window.NVD_COI_MODE = "unavailable";

@@ -16,7 +16,7 @@
   const brandColors = {
     atari:"#ee6725", nintendo:"#d71920", playstation:"#244b8f", sega:"#087bc1",
     bandai:"#df1c32", wonderswan:"#26264f", nec:"#164b8d", coleco:"#176fba",
-    commodore:"#2457a7", snk:"#009cdd", "3do":"#d4242c", microsoft:"#1b63aa", arcade:"#f2b544"
+    commodore:"#2457a7", snk:"#009cdd", "3do":"#d4242c", microsoft:"#1b63aa", philips:"#0f58a8", arcade:"#f2b544"
   };
   function displayGameName(name) {
     const clean = String(name || "Unknown game").replace(/\\/g,"/").split("/").pop();
@@ -51,6 +51,8 @@
       mark='<path d="M36 26 L77 9 L77 28 L55 38 L55 66 L77 78 L77 96 L36 77Z M84 9 L125 26 L125 77 L84 96 L84 77 L106 66 L106 38 L84 28Z M133 26 L164 26 L164 80 L133 80 L133 64 L148 64 L148 42 L133 42Z" fill="'+color+'"/>';
     } else if(slug==="microsoft") {
       mark='<path d="M28 21 L78 21 L78 46 L28 46Z M84 21 L134 21 L134 46 L84 46Z M28 52 L78 52 L78 77 L28 77Z M84 52 L134 52 L134 77 L84 77Z" fill="'+color+'"/><text x="153" y="47" font-family="Arial,sans-serif" font-weight="900" font-size="17" fill="'+color+'">MS-DOS</text>';
+    } else if(slug==="philips") {
+      mark='<circle cx="100" cy="52" r="33" fill="none" stroke="'+color+'" stroke-width="4"/><path d="M40 49 Q60 32 80 49 T120 49 T160 49 M40 59 Q60 42 80 59 T120 59 T160 59" fill="none" stroke="'+color+'" stroke-width="4" stroke-linecap="round"/><text x="100" y="98" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" font-weight="900" fill="'+color+'">PHILIPS</text>';
     } else if(slug==="arcade") {
       mark='<rect x="62" y="8" width="76" height="90" rx="9" fill="#1b2030" stroke="'+color+'" stroke-width="5"/><rect x="73" y="18" width="54" height="37" rx="3" fill="'+color+'"/><path d="M82 68 H118 M91 77 H109 M100 61 V68" stroke="'+color+'" stroke-width="5" stroke-linecap="round"/>';
     } else {

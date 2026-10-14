@@ -605,7 +605,7 @@
     frame.classList.remove("hidden");
 
     const config = {
-      core: select.value,
+      core: chosen.coreId || select.value,
       romUrl: activeBlobUrl,
       name: selectedFile.name,
       gameID: stableGameID(select.value, selectedFile.name),

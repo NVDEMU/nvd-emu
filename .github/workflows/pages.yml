@@ -50,7 +50,7 @@ jobs:
           configured_systems = re.findall(r'^\s{4}(?:[A-Za-z0-9_]+|"[^"]+"):\{', catalog, flags=re.M)
           if len(configured_systems) < 40:
               raise SystemExit(f"Expected at least 40 system mappings, found {len(configured_systems)}")
-          for page in ("library.html", "systems.html", "player.html", "settings.html"):
+          for page in ("library.html", "systems.html", "player.html", "settings.html", "emulator.html"):
               if not Path("docs", page).is_file():
                   raise SystemExit(f"Missing standalone page: docs/{page}")
           for asset in ("site.css", "systems-data.js", "artwork.js", "storage.js", "coi-bootstrap.js"):
@@ -67,8 +67,14 @@ jobs:
               raise SystemExit("The player must report EmulatorJS ready/game-start events for black-screen diagnostics")
           if 'window.__nvdReport("isolation-error"' not in player_page:
               raise SystemExit("The player must verify SharedArrayBuffer inside the threaded emulator frame")
-          if "No game-start confirmation after 45 seconds" not in player_page:
-              raise SystemExit("The player must report stalled emulator initialization instead of leaving a silent black screen")
+          if "core-timeout" not in player_page or not Path("docs/emulator.html").is_file():
+              raise SystemExit("The dedicated emulator document and explicit startup-timeout reporting are required")
+          storage = Path("docs/storage.js").read_text(encoding="utf-8")
+          if "duplicateKey" not in storage or "alreadyExists" not in storage or "store.add(record)" not in storage:
+              raise SystemExit("The browser library must detect and skip duplicate games")
+          settings = Path("docs/settings.html").read_text(encoding="utf-8")
+          if "+swSupported" in settings or "+swControls" in settings:
+              raise SystemExit("Settings diagnostics cannot reference undefined service-worker variables")
           if "Cross-Origin-Embedder-Policy" not in Path("docs/sw.js").read_text(encoding="utf-8"):
               raise SystemExit("The cross-origin isolation service-worker shim is missing")
           artwork = Path("docs/artwork.js").read_text(encoding="utf-8")
@@ -78,7 +84,7 @@ jobs:
           boxart_code = artwork.split("function setBoxArt", 1)[1].split("window.NVD_ARTWORK", 1)[0]
           if "crossOrigin" in boxart_code:
               raise SystemExit("Game-cover images must not force CORS mode; some thumbnail hosts do not permit it")
-          if "is3dsPlayerNavigation" not in service_worker or "nvd-emu-web-shell-v12" not in service_worker:
+          if "is3dsPlayerNavigation" not in service_worker or "nvd-emu-web-shell-v13" not in service_worker:
               raise SystemExit("Cross-origin isolation must be scoped to the 3DS player and use the refreshed cache version")
           if "coepCredentialless" in service_worker:
               raise SystemExit("Legacy global COEP state must not be used; it can break artwork on non-3DS pages")
@@ -110,7 +116,7 @@ jobs:
           if not Path("index.html").exists() or "./docs/" not in Path("index.html").read_text(encoding="utf-8"):
               raise SystemExit("The root Pages entry must route visitors into the web application")
           Path("/tmp/nvd-emu-web-inline.js").write_text(scripts[0], encoding="utf-8")
-          for page in ("docs/library.html", "docs/systems.html", "docs/player.html", "docs/settings.html"):
+          for page in ("docs/library.html", "docs/systems.html", "docs/player.html", "docs/settings.html", "docs/emulator.html"):
               source = Path(page).read_text(encoding="utf-8")
               inline = re.findall(r"<script(?![^>]*\bsrc=)(?:\s[^>]*)?>([\s\S]*?)</script>", source)
               for index, code in enumerate(inline):

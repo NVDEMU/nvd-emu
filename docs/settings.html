@@ -39,8 +39,8 @@
       "This page isolated="+isolated,
       "SharedArrayBuffer="+sab,
       "secureContext="+(window.isSecureContext===true),
-      "serviceWorkerSupported="+swSupported,
-      "serviceWorkerControlsPage="+swControls,
+      "serviceWorkerSupported="+!!navigator.serviceWorker,
+      "serviceWorkerControlsPage="+!!(navigator.serviceWorker&&navigator.serviceWorker.controller),
       "policy="+(window.NVD_COI_MODE||"unknown"),
       "browser="+(navigator.userAgent||"unknown")
     ].join(" · ");

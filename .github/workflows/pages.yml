@@ -56,7 +56,7 @@ jobs:
           for asset in ("site.css", "systems-data.js", "artwork.js", "storage.js", "coi-bootstrap.js"):
               if not Path("docs", asset).is_file():
                   raise SystemExit(f"Missing shared asset: docs/{asset}")
-          if 'coreChannel:"nightly"' not in catalog or 'threads:true' not in catalog or 'coreId:"3ds"' not in catalog:
+          if 'coreChannel:"nightly"' not in catalog or 'threads:true' not in catalog or 'coreId:"azahar"' not in catalog:
               raise SystemExit("Experimental 3DS nightly core/threading configuration is missing")
           if 'window.EJS_threads=!!config.threads' not in html:
               raise SystemExit("The player is not passing the threading option to EmulatorJS")

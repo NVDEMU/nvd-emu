@@ -140,7 +140,7 @@ jobs:
             codesign --force --deep --sign - --timestamp=none "$APP_PATH"
             codesign --verify --deep --strict --verbose=2 "$APP_PATH"
             ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" nvd-emu-macos-arm64-unsigned.zip
-            hdiutil create -volname "nvd-emu" -srcfolder "$APP_PATH" -ov -format UDZO nvd-emu-macos-arm64-unsigned.dmg
+            # Keep unsigned builds as short-lived CI artifacts only; do not create a public-installation DMG.
           fi
 
       - name: Upload build package

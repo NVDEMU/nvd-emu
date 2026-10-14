@@ -47,7 +47,7 @@
         const name=document.createElement("div");name.className="game-name";name.textContent=window.NVD_ARTWORK.displayGameName(record.name);
         const meta=document.createElement("div");meta.className="game-meta";meta.textContent=system.name+" · "+(record.size<1048576?(record.size/1024).toFixed(1)+" KB":(record.size/1048576).toFixed(1)+" MB");
         const actions=document.createElement("div");actions.className="game-actions";
-        const play=document.createElement("a");play.className="button primary";play.href="./player.html?launch="+encodeURIComponent(record.key);play.textContent="▶ Play";
+        const play=document.createElement("a");play.className="button primary";const launchParams=new URLSearchParams();if(record.systemId==="3ds")launchParams.set("system","3ds");launchParams.set("launch",record.key);play.href="./player.html?"+launchParams.toString();play.textContent="▶ Play";
         const remove=document.createElement("button");remove.className="subtle";remove.textContent="Remove";remove.addEventListener("click",async()=>{try{await window.NVDLibrary.remove(record.key);status("Removed "+record.name+". The original file on disk was not changed.","ok");await render();}catch(error){status("Could not remove game: "+error.message,"error");}});
         actions.append(play,remove);info.append(name,meta,actions);tile.append(cover,info);container.append(tile);
       }

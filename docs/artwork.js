@@ -62,8 +62,8 @@
   function logoUrl(system) {
     const slug=system.logo||"arcade";
     if(slug==="arcade")return "./assets/logos/arcade.svg";
-    if(logoFiles[slug])return "https://commons.wikimedia.org/wiki/Special:FilePath/"+encodeURIComponent(logoFiles[slug]);
-    return "";
+    // Always have a locally generated logo available; external logo host failures must not create text-only cards.
+    return fallbackLogoSvg(system);
   }
   function setSystemLogo(img,system) {
     img.loading="lazy";
@@ -82,16 +82,17 @@
     img.src=src||fallbackLogoSvg(system);
   }
   function candidatesFor(entry,system) {
+    const original=String(entry.name||"").replace(/\\/g,"/").split("/").pop().replace(/\\.[^.]+$/,"").trim();
     const base=displayGameName(entry.name);
     const clean=base.replace(/[&*\/:<>?\\|"]/g,"_").trim();
     const noRegion=base.replace(/\s*\([^)]*\)/g,"").replace(/\s*\[[^\]]*\]/g,"").trim();
     const shortName=base.split(/\s(?:\(|\[)/)[0].trim();
     const regionSuffixes=[" (World)"," (USA)"," (USA, Europe)"," (Europe)"," (Japan)"," (Japan, USA)"," (USA, Europe, Japan)"," (En,Ja)"];
-    const names=[...new Set([base,clean,noRegion,shortName].filter(Boolean))];
+    const names=[...new Set([original,base,clean,noRegion,shortName].filter(Boolean))];
     const regionSuffixes=[" (World)"," (USA)"," (USA, Europe)"," (Europe)"," (Japan)"," (Japan, USA)"," (USA, Europe, Japan)"," (En,Ja)"];
     const regionalNames=[];
-    if(!/\\([^)]*\\)|\\[[^\\]]*\\]/.test(base)){
-      for(const name of [...new Set([base,clean])])for(const region of regionSuffixes)regionalNames.push(name+region);
+    if(!/\\([^)]*\\)|\\[[^\\]]*\\]/.test(original)){
+      for(const name of [...new Set([original,base,clean])])for(const region of regionSuffixes)regionalNames.push(name+region);
     }
     const allBoxNames=[...new Set([...names,...regionalNames])];
     const extension=((entry.name||"").split(".").pop()||"").toLowerCase();
@@ -105,7 +106,7 @@
       // Box art gets exact names plus likely region variants; title screens and snaps are a smaller fallback set.
       for(const name of allBoxNames)urls.push("https://thumbnails.libretro.com/"+playlist.split("/").map(encodeURIComponent).join("/")+"/Named_Boxarts/"+encodeURIComponent(name)+".png");
       for(const folder of folders.slice(1)){
-        for(const name of names)urls.push("https://thumbnails.libretro.com/"+playlist.split("/").map(encodeURIComponent).join("/")+"/"+folder+"/"+encodeURIComponent(name)+".png");
+        for(const name of names.slice(0,3))urls.push("https://thumbnails.libretro.com/"+playlist.split("/").map(encodeURIComponent).join("/")+"/"+folder+"/"+encodeURIComponent(name)+".png");
       }
     }
     return urls;
@@ -117,6 +118,7 @@
     img.alt=displayGameName(entry.name)+" cover art";
     const fallback=img.parentElement&&img.parentElement.querySelector(".cover-fallback");
     const urls=candidatesFor(entry,system);
+    if(fallback){fallback.textContent=displayGameName(entry.name);fallback.classList.add("is-title-art","family-"+(system.art||"other"));fallback.style.display="grid";}
     let index=0;
     img.onload=()=>{img.style.display="block";if(fallback)fallback.style.display="none";};
     img.onerror=()=>{

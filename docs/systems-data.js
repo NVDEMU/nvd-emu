@@ -19,7 +19,7 @@ window.NVD_SYSTEMS = {
     dreamcast:{name:"Sega Dreamcast",icon:"💿",extensions:["cdi","gdi","chd","cue","bin"],core:"Flycast",art:"sega",logo:"sega",badge:"DREAMCAST",boxartPlaylist:"Sega - Dreamcast",coreId:"dreamcast"},
     vb:{name:"Virtual Boy",icon:"🔴",extensions:["vb","vboy","zip"],core:"Beetle VB",art:"nintendo",logo:"nintendo",badge:"VIRTUAL BOY",boxartPlaylist:"Nintendo - Virtual Boy",coreId:"vb"},
     pce:{name:"PC Engine / TurboGrafx-16",icon:"🎯",extensions:["pce","sgx","zip"],core:"Mednafen PCE",art:"other",logo:"nec",badge:"PC ENGINE",boxartPlaylist:"NEC - PC Engine - TurboGrafx 16",coreId:"pce"},
-    wonderswan:{name:"WonderSwan / Color",icon:"📱",extensions:["ws","wsc","zip"],core:"Beetle WonderSwan",art:"other",logo:"bandai",badge:"WONDERSWAN",boxartPlaylist:"Bandai - WonderSwan",coreId:"ws"},
+    wonderswan:{name:"WonderSwan / Color",icon:"📱",extensions:["ws","wsc","zip"],core:"Beetle WonderSwan",art:"other",logo:"wonderswan",badge:"WONDERSWAN",boxartPlaylist:"Bandai - WonderSwan",coreId:"ws"},
     arcade:{name:"Arcade (FBNeo)",icon:"👾",extensions:["zip"],core:"FinalBurn Neo",art:"arcade",logo:"snk",badge:"ARCADE",boxartPlaylist:"FinalBurn Neo",coreId:"arcade"},
 
     a5200:{name:"Atari 5200",icon:"🎮",extensions:["a52","bin","rom","zip"],core:"Atari 5200",art:"atari",logo:"atari",badge:"ATARI 5200",boxartPlaylist:"Atari - 5200",coreId:"a5200"},
@@ -34,4 +34,9 @@ window.NVD_SYSTEMS = {
     "3do":{name:"3DO Interactive Multiplayer",icon:"💿",extensions:["cue","chd","iso","bin"],core:"Opera",art:"other",logo:"3do",badge:"3DO",boxartPlaylist:"The 3DO Company - 3DO",note:"Some games require a BIOS file; nvd-emu does not include one.",coreId:"3do"},
     amiga:{name:"Commodore Amiga",icon:"🖥️",extensions:["adf","adz","dms","ipf","lha","hdf","uae","zip"],core:"PUAE",art:"other",logo:"commodore",badge:"AMIGA",boxartPlaylist:"Commodore - Amiga",note:"Some Amiga software requires a compatible Kickstart ROM you supply yourself.",coreId:"amiga"},
     dos:{name:"MS-DOS",icon:"💾",extensions:["zip","dos","dsk","img"],core:"DOSBox Pure",art:"other",logo:"microsoft",badge:"MS-DOS",boxartPlaylist:"DOS",note:"DOS games are usually easiest to launch from a supported ZIP archive.",coreId:"dos"}
+    pet:{name:"Commodore PET",icon:"🖥️",extensions:["prg","d64","d81","tap","crt","zip"],core:"VICE xpet",art:"other",logo:"commodore",badge:"PET",boxartPlaylist:"Commodore - PET",coreId:"pet",note:"PET program and disk formats vary by title."},
+    plus4:{name:"Commodore Plus/4",icon:"🖥️",extensions:["prg","d64","d81","tap","crt","zip"],core:"VICE xplus4",art:"other",logo:"commodore",badge:"PLUS/4",boxartPlaylist:"Commodore - Plus4",coreId:"plus4",note:"Plus/4-compatible program and disk images are recommended."},
+    fds:{name:"Famicom Disk System",icon:"💾",extensions:["fds","zip"],core:"FCEUmm (NES/FDS)",art:"nintendo",logo:"nintendo",badge:"FAMICOM DISK SYSTEM",boxartPlaylist:"Nintendo - Family Computer Disk System",coreId:"nes",note:"Runs through the NES/Famicom core; a compatible FDS BIOS may be needed."},
+    mame:{name:"Arcade (MAME 2003)",icon:"🕹️",extensions:["zip"],core:"MAME 2003",art:"arcade",logo:"arcade",badge:"MAME 2003",boxartPlaylist:"MAME 2003-Plus",coreId:"mame",note:"Use arcade ROM ZIPs that match the MAME 2003 ROM set; mismatched sets commonly fail."},
+    "3ds":{name:"Nintendo 3DS (experimental)",icon:"🎮",extensions:["3ds","cci","cxi","cia","zip"],core:"Azahar (experimental)",art:"nintendo",logo:"nintendo",badge:"NINTENDO 3DS",boxartPlaylist:"Nintendo - Nintendo 3DS",coreId:"3ds",note:"Experimental, hardware-intensive core. Browser/threading requirements vary and game compatibility is not yet validated."}
   };

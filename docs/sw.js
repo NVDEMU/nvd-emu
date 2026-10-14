@@ -1,4 +1,4 @@
-const CACHE_NAME = "nvd-emu-web-shell-v6";
+const CACHE_NAME = "nvd-emu-web-shell-v7";
 const APP_FILES = [
   "./", "./index.html", "./library.html", "./systems.html", "./player.html",
   "./settings.html", "./site.css", "./systems-data.js", "./artwork.js",
@@ -29,6 +29,7 @@ self.addEventListener("activate", event => {
 self.addEventListener("message", event => {
   if (event.data && event.data.type === "coepCredentialless") {
     coepCredentialless = Boolean(event.data.value);
+    if (event.ports && event.ports[0]) event.ports[0].postMessage({ ok: true });
   }
 });
 

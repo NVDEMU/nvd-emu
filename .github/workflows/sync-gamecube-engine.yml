@@ -1,0 +1,102 @@
+name: Sync GameCube WASM player
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/index.html"
+      - "docs/player.html"
+      - "docs/settings.html"
+      - "docs/systems.html"
+      - "docs/systems-data.js"
+      - "docs/storage.js"
+      - "docs/coi-bootstrap.js"
+      - "docs/sw.js"
+      - "docs/gamecube-bridge.js"
+      - ".github/workflows/sync-gamecube-engine.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nvd-emu-gamecube-engine-sync
+  cancel-in-progress: false
+
+jobs:
+  sync-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out NVD-EMU
+        uses: actions/checkout@v4
+
+      - name: Download pinned wasm-dolphin runtime
+        shell: bash
+        env:
+          UPSTREAM_SHA: 7e38409ace3dda709c178312ff63fd92a3653cc7
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/wasm-dolphin.tar.gz"
+          upstream="$RUNNER_TEMP/wasm-dolphin"
+          curl --fail --location --retry 3 "https://github.com/dougchansan/wasm-dolphin/archive/7e38409ace3dda709c178312ff63fd92a3653cc7.tar.gz" --output "$archive"
+          mkdir -p "$upstream"
+          tar -xzf "$archive" -C "$upstream" --strip-components=1
+          test -s "$upstream/index.html"
+          test -s "$upstream/cores/dolphin/dolphin-core-upstream.js"
+          test -s "$upstream/cores/dolphin/dolphin-core-upstream.wasm"
+          test -s "$upstream/src/bootstrap.js"
+          rm -rf docs/gamecube-engine
+          mkdir -p docs/gamecube-engine
+          cp -R "$upstream/src" "$upstream/cores" docs/gamecube-engine/
+          cp "$upstream/LICENSE" docs/gamecube-engine/LICENSE
+          cp "$upstream/index.html" docs/gamecube-engine/index.html
+          printf '{"type":"module"}\n' > docs/gamecube-engine/package.json
+          cat > docs/gamecube-engine/UPSTREAM.md <<EOF
+          # Third-party runtime notice
+
+          NVD-EMU's experimental browser GameCube player uses the wasm-dolphin browser runtime.
+
+          - Upstream project: https://github.com/dougchansan/wasm-dolphin
+          - Pinned source revision: 7e38409ace3dda709c178312ff63fd92a3653cc7
+          - License: GPL-2.0-or-later; see \`LICENSE\` in this directory.
+          - GameCube and Wii emulation are experimental. No game or console firmware is bundled.
+
+          Corresponding source, build patches and attribution are available at the pinned upstream revision.
+          EOF
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("docs/gamecube-engine/index.html")
+          html = path.read_text(encoding="utf-8")
+          html = html.replace("<title>wasm-dolphin</title>", "<title>GameCube · NVD-EMU</title>", 1)
+          html = html.replace('<link rel="icon" href="data:,">', '<link rel="icon" href="../nvd-emu-logo.svg">', 1)
+          html = html.replace("<h1>wasm-dolphin</h1>", "<h1>NVD-EMU GameCube</h1>", 1)
+          html = html.replace("</head>", '<script src="../coi-bootstrap.js"></script><script src="../storage.js"></script>' + chr(10) + '</head>', 1)
+          html = html.replace("<body>", '<body>' + chr(10) + '<div id="nvd-engine-notice" hidden role="status" aria-live="polite" style="position:fixed;left:12px;right:12px;top:72px;z-index:10000;padding:10px 14px;border:1px solid #805f34;border-radius:9px;background:#211c14;color:#f4d9a7;font:12px/1.5 system-ui,sans-serif"></div>', 1)
+          html = html.replace('accept=".iso,.gcm,.rvz,.wbfs,.wad,.dol,.elf"', 'accept=".iso,.nkit.iso,.gcm,.rvz,.wbfs,.ciso,.dol,.elf"', 1)
+          marker = '<script type="module" src="./src/bootstrap.js"></script>'
+          if marker not in html:
+              raise SystemExit("Could not locate wasm-dolphin app bootstrap script")
+          html = html.replace(marker, marker + chr(10) + '<script type="module" src="../gamecube-bridge.js"></script>', 1)
+          path.write_text(html, encoding="utf-8")
+          PY
+          node --check docs/gamecube-engine/src/app.js
+          node --check docs/gamecube-engine/src/core-host.js
+          node --check docs/gamecube-engine/src/bootstrap.js
+          node --check docs/gamecube-bridge.js
+          test "$(wc -c < docs/gamecube-engine/cores/dolphin/dolphin-core-upstream.wasm)" -gt 10000000
+
+      - name: Commit runtime assets to the Pages branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git status --porcelain -- docs/gamecube-engine | grep -q .; then
+            git add docs/gamecube-engine
+            git commit -m "Vendor pinned GameCube WASM player assets"
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          else
+            echo "The pinned GameCube runtime assets are already current."
+          fi

@@ -100,8 +100,12 @@ jobs:
               raise SystemExit("Virtual Boy and Nintendo 3DS system logos must use actual logo assets")
           if "function renderSystemCatalog()" not in html:
               raise SystemExit("The dynamic system picker and compatibility list are missing")
-          if "wasm-dolphin" not in html or "retail-disc library flow" not in html:
-              raise SystemExit("GameCube/Wii browser research status or candidate link is missing")
+          if "wasm-dolphin" not in html or "retail-disc library flow" not in html or "gamecube" not in catalog:
+              raise SystemExit("GameCube WASM integration marker or system profile is missing")
+          if "clearAllAppData" not in Path("docs/storage.js").read_text(encoding="utf-8"):
+              raise SystemExit("Orphaned-storage recovery is missing")
+          if not Path("docs/gamecube-bridge.js").is_file() or not Path(".github/workflows/sync-gamecube-engine.yml").is_file():
+              raise SystemExit("GameCube bridge or pinned-runtime sync workflow is missing")
           if 'id="psx-bios-file"' not in html or 'window.EJS_biosUrl=config.biosUrl||""' not in html:
               raise SystemExit("Optional local PS1 BIOS support is missing")
           if 'pcsx_rearmed_pad1type":"dualshock"' not in html or 'pcsx_rearmed_analog_combo":"l1+r1+select"' not in html:
@@ -128,7 +132,7 @@ jobs:
           for script in /tmp/nvd-emu-library-*.js /tmp/nvd-emu-systems-*.js /tmp/nvd-emu-player-*.js /tmp/nvd-emu-settings-*.js /tmp/nvd-emu-emulator-*.js; do
             test -f "$script" && node --check "$script"
           done
-          for script in docs/systems-data.js docs/artwork.js docs/storage.js docs/sw.js docs/coi-bootstrap.js; do node --check "$script"; done
+          for script in docs/systems-data.js docs/artwork.js docs/storage.js docs/sw.js docs/coi-bootstrap.js docs/gamecube-bridge.js; do node --check "$script"; done
           for logo in atari playstation sega nec commodore; do test -f "docs/assets/logos/$logo.svg"; done
           test -f docs/nvd-emu-logo.svg
           test -f docs/.nojekyll

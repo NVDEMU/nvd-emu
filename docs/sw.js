@@ -1,7 +1,7 @@
-const CACHE_NAME = "nvd-emu-web-shell-v12";
+const CACHE_NAME = "nvd-emu-web-shell-v13";
 const APP_FILES = [
   "./", "./index.html", "./library.html", "./systems.html", "./player.html",
-  "./settings.html", "./site.css", "./systems-data.js", "./artwork.js",
+  "./settings.html", "./emulator.html", "./site.css", "./systems-data.js", "./artwork.js",
   "./storage.js", "./coi-bootstrap.js", "./manifest.webmanifest",
   "./nvd-emu-logo.svg", "./assets/logos/atari.svg", "./assets/logos/playstation.svg", "./assets/logos/sega.svg", "./assets/logos/nec.svg", "./assets/logos/commodore.svg"
 ];

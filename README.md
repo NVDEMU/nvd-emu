@@ -1,39 +1,48 @@
 # nvd-emu
 
-**A multi-system emulator project for Windows, macOS Apple Silicon, and the browser.**
+**A browser-first retro gaming frontend.** NVD-EMU is a multi-page web app for browsing your personal ROM library, discovering supported systems, and launching games through EmulatorJS cores.
 
-The native Qt/C++ desktop frontend is an early foundation. For a no-Terminal route on macOS, **nvd-emu Web** is a browser edition that loads a user's own game file locally and runs supported retro systems through EmulatorJS cores.
+## Open the app
 
-## Play without installing a Mac app
+The public site is hosted with GitHub Pages:
 
-The browser edition lives in [`docs/`](docs/): [Overview](docs/index.html), [Game library](docs/library.html), [Systems](docs/systems.html), [Player](docs/player.html), and [Settings](docs/settings.html). For the simplest GitHub Pages setup, open [Settings → Pages](https://github.com/NVDEMU/nvd-emu/settings/pages) and set **Build and deployment → Source** to **Deploy from a branch**, branch **main**, folder **/(root)**, then save. The root `index.html` redirects into the actual browser app at [https://nvdemu.github.io/nvd-emu/docs/](https://nvdemu.github.io/nvd-emu/docs/). The Pages workflow validates the web code; GitHub Pages publishes the root branch automatically. Open it in Safari, Chrome, or Edge. On macOS Safari, use File → Add to Dock to make it act like an app; there is no Terminal, DMG, or Gatekeeper dialog.
+- **[Open NVD-EMU](https://nvdemu.github.io/nvd-emu/docs/)**
+- [Game library](https://nvdemu.github.io/nvd-emu/docs/library.html) — local ROM storage, game cover lookup, play and remove controls.
+- [Systems catalogue](https://nvdemu.github.io/nvd-emu/docs/systems.html) — searchable, alphabetically ordered console and computer catalogue.
+- [Player](https://nvdemu.github.io/nvd-emu/docs/player.html) — dedicated game launcher with keyboard/controller settings, save states and fullscreen.
+- [Settings](https://nvdemu.github.io/nvd-emu/docs/settings.html) — browser storage usage and persistent-storage controls.
+- [Source code](https://github.com/NVDEMU/nvd-emu/tree/main/docs).
 
-**34 browser systems are configured:** Atari 2600/5200/7800, Atari 8-bit computers, Atari Lynx/Jaguar, NES, SNES, Game Boy/Color, Game Boy Advance, Nintendo 64/DS, Virtual Boy, PlayStation/PSP, Sega Master System, Game Gear, Mega Drive/Genesis, Sega CD, 32X, Saturn, Dreamcast, PC Engine/TurboGrafx-16, WonderSwan/Color, FinalBurn Neo arcade, ColecoVision, Commodore 64/128/VIC-20/Amiga, Neo Geo Pocket/Color, NEC PC-FX, 3DO, and MS-DOS. Console cards use manufacturer logos from Simple Icons where available, and game covers are looked up by ROM filename from the Libretro thumbnail collection, with a brand-logo fallback when a match is unavailable. The browser edition has separate Overview, Game library, Systems, Player, and Settings pages. Its game library stores ROM data in IndexedDB, restores it after reopening the browser, and provides per-game removal. It requests persistent browser storage when available, but storage availability, quotas, and eviction policies still depend on the browser. Removing a game only removes nvd-emu's local library copy, not the original file on disk. EmulatorJS provides the corresponding browser cores; the selector, system cards, file-extension checks, and compatibility list use one shared catalogue. The original in-memory Atari 2600 color-cycle diagnostic cartridge remains available to smoke-test without a game ROM. The player toolbar exposes controller remapping, save/load states, quick-save/quick-load, and game-save import/export. For PS1, PCSX-ReARMed is configured with DualShock analog input and an HLE BIOS fallback; you may optionally choose your own compatible BIOS file locally for games that need it. No BIOS is bundled, and BIOS-free compatibility varies by game and region. These mappings are a starting compatibility surface, not a claim that every commercial ROM has been tested. GameCube/Wii remain under separate WebAssembly feasibility research; see [the roadmap](docs/roadmap/gamecube-wii-wasm.md).
+If the site is not published yet, go to [GitHub Pages settings](https://github.com/NVDEMU/nvd-emu/settings/pages) and set **Build and deployment → Source** to **Deploy from a branch**, branch **main**, folder **/(root)**. The root entry redirects visitors to the web app under \`/docs/\`. The Actions workflow checks the app scripts and required assets on changes.
 
-The browser downloads the emulator engine from the EmulatorJS stable CDN when you start a game. Your selected ROM is held in a local browser object URL and is not uploaded by this page. An internet connection is required to fetch the engine. Game ROMs and console BIOS files are not included; use files you are legally entitled to use.
+## Browser systems
 
-## Native desktop frontend
+NVD-EMU has **40 system profiles configured** across Atari, Nintendo, PlayStation, Sega, arcade, NEC, Coleco, Commodore and other retro platforms. The catalogue includes NES/Famicom and Famicom Disk System, SNES, Game Boy/Game Boy Color, Game Boy Advance, Virtual Boy, Nintendo 64 and DS, Atari 2600/5200/7800/Lynx/Jaguar, PlayStation, PSP, Sega Master System/Game Gear/Mega Drive/Sega CD/32X/Saturn/Dreamcast, PC Engine/SuperGrafx, WonderSwan, ColecoVision, Commodore 64/128/PET/Plus/4/VIC-20/Amiga, Neo Geo Pocket/Color, PC-FX, 3DO, MS-DOS, FinalBurn Neo and MAME 2003 profiles.
 
-- C++20 and Qt 6
-- Windows x64 and macOS arm64 build jobs
-- Library scanning and a versioned core-plugin interface
-- Release automation in [`.github/workflows/build.yml`](.github/workflows/build.yml)
+System cards use console/company artwork and local SVG logos or custom logos for brands without a dependable image source. Game cover art is searched by ROM filename in the [Libretro thumbnails collection](https://github.com/libretro-thumbnails/libretro-thumbnails). Files with well-known names have the best chance of matching; if a cover cannot be found, the library uses a game-title card instead of showing the console logo as fake game art.
 
-No native system core has been fully integrated into the Qt runtime yet. The browser edition is the first playable route while the native application matures.
+This catalogue describes configured targets, **not a guarantee that every system or game has been successfully tested**. Unsupported/experimental systems are separated on the Systems page rather than quietly mapping them to a different console core.
 
-## Why CI artifacts expire
+## Browser storage and privacy
 
-GitHub Actions **artifacts** are temporary build outputs retained for a limited period (the workflow currently uses 7 days). They're for checking a build or passing outputs between jobs. **Release assets** attached to a GitHub Release are the normal public downloads. The project no longer intends to publish unsigned/unnotarized macOS packages as release assets because Gatekeeper blocks them.
+- Selected ROM data is saved in the browser's IndexedDB library, so the library can be restored after closing and reopening the tab.
+- NVD-EMU requests persistent browser storage when available. Browser eviction, privacy modes, manually clearing site data and storage quotas can still affect availability.
+- Your ROMs and BIOS files are not uploaded to this repository or a NVD-EMU game server. Browser emulation cores are loaded on demand from the EmulatorJS CDN, and artwork is retrieved from its external source.
+- Game files, BIOS/firmware dumps and commercial artwork are not bundled in this repository. Use games and firmware you are legally entitled to use.
+- Remove a library entry from NVD-EMU to remove its saved local copy; this does not delete your original file elsewhere on the device.
 
-## macOS signing / notarization
+## 3DS in the browser · experimental
 
-Apple's Developer ID distribution path requires an Apple Developer Program membership, currently US$99 per year. Without those credentials, there is no honest way to make this native app a standard notarized Mac download. See [the setup guide](docs/macos-signing.md). For now, use the browser edition rather than disabling Mac security.
+NVD-EMU includes an experimental Nintendo 3DS profile using the Azahar core exposed by EmulatorJS's **nightly** data channel. It enables EmulatorJS threading and includes a service-worker workaround for the cross-origin isolation headers needed by \`SharedArrayBuffer\` on static hosting.
 
-## Architecture and dependencies
+This is an early experiment, not a promise of playable compatibility. It requires a supported browser/device and working cross-origin isolation. GitHub Pages service-worker header shims may behave differently across browsers and browser settings, and the core may change in nightly builds. The app checks isolation before starting a 3DS game and displays an error when the browser has not enabled it. No “first ever” claim is made: the goal is to make a 3DS browser experience that's convenient, honest about compatibility, and easy to test.
 
-- Native UI: Qt 6 / C++20.
-- Web frontend: static HTML, CSS, and JavaScript.
-- Browser emulator engines: [EmulatorJS](https://github.com/EmulatorJS/EmulatorJS) (GPL-3.0); Atari 2600 uses its published Stella 2014 core (GPLv2). The browser page currently loads those engine assets from the upstream stable CDN rather than bundling them locally. Consult upstream license terms before redistributing modified or self-hosted core assets.
-- No copyrighted game ROMs, console firmware, or BIOS files are included.
+## Browser engine and controls
 
-See [macOS signing docs](docs/macos-signing.md) and the [web app source](docs/index.html).
+NVD-EMU is static HTML, CSS and JavaScript. [EmulatorJS](https://github.com/EmulatorJS/EmulatorJS) supplies the WebAssembly emulation cores. The game player exposes the EmulatorJS toolbar for controller mapping, save/load states, quick save/load, screenshots, audio and fullscreen where supported. The PlayStation profile requests DualShock input and allows an optional BIOS file from the user.
+
+GameCube and Wii are not integrated playable systems. See the [browser feasibility roadmap](docs/roadmap/gamecube-wii-wasm.md) for why a full Dolphin-derived browser port needs separate engineering and performance testing.
+
+## Project scope
+
+This repository is intentionally **browser-only**. CI validates the web app, its separate pages, browser-storage helper, artwork, system catalogue and threading bootstrap; it does not build or release a native Qt/C++ desktop app.

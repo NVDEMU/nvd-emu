@@ -44,7 +44,7 @@
         const fallback=document.createElement("span");fallback.className="cover-fallback";fallback.textContent=system.badge||system.name;
         const img=document.createElement("img");cover.append(fallback,img);window.NVD_ARTWORK.setBoxArt(img,record,system);
         const info=document.createElement("div");info.className="game-info";
-        const name=document.createElement("div");name.className="game-name";name.textContent=record.name;
+        const name=document.createElement("div");name.className="game-name";name.textContent=window.NVD_ARTWORK.displayGameName(record.name);
         const meta=document.createElement("div");meta.className="game-meta";meta.textContent=system.name+" · "+(record.size<1048576?(record.size/1024).toFixed(1)+" KB":(record.size/1048576).toFixed(1)+" MB");
         const actions=document.createElement("div");actions.className="game-actions";
         const play=document.createElement("a");play.className="button primary";play.href="./player.html?launch="+encodeURIComponent(record.key);play.textContent="▶ Play";

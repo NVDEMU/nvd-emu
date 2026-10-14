@@ -2,13 +2,13 @@
 
 **A multi-system emulator project for Windows, macOS Apple Silicon, and the browser.**
 
-The native Qt/C++ desktop frontend is an early foundation. For an immediately usable, no-Terminal route on macOS, the repository is also adding **nvd-emu Web**, a browser edition that can load a user's own game file locally and run it through EmulatorJS cores.
+The native Qt/C++ desktop frontend is an early foundation. For a no-Terminal route on macOS, **nvd-emu Web** is a browser edition that loads a user's own game file locally and runs supported retro systems through EmulatorJS cores.
 
 ## Play without installing a Mac app
 
-The browser edition lives in [`docs/`](docs/). One-time setup is required: open [Settings → Pages](https://github.com/NVDEMU/nvd-emu/settings/pages), set **Build and deployment → Source** to **GitHub Actions**, and save. The [Pages workflow](.github/workflows/pages.yml) then deploys the site automatically to [https://nvdemu.github.io/nvd-emu/](https://nvdemu.github.io/nvd-emu/). Open it in Safari, Chrome, or Edge. On macOS Safari, use File → Add to Dock to make it act like an app; there is no Terminal, DMG, or Gatekeeper dialog.
+The browser edition lives in [`docs/`](docs/). For the simplest GitHub Pages setup, open [Settings → Pages](https://github.com/NVDEMU/nvd-emu/settings/pages) and set **Build and deployment → Source** to **Deploy from a branch**, branch **main**, folder **/(root)**, then save. The root `index.html` redirects into the actual browser app at [https://nvdemu.github.io/nvd-emu/docs/](https://nvdemu.github.io/nvd-emu/docs/). The Pages workflow validates the web code; GitHub Pages publishes the root branch automatically. Open it in Safari, Chrome, or Edge. On macOS Safari, use File → Add to Dock to make it act like an app; there is no Terminal, DMG, or Gatekeeper dialog.
 
-**First system: Atari 2600.** The web frontend loads the Stella 2014 core via EmulatorJS and includes an original in-memory color-cycle diagnostic cartridge, so you can test the CPU/TIA path without supplying a game ROM. The selector also wires NES, Game Boy/Color, Game Boy Advance, SNES, Sega Master System, and Mega Drive/Genesis. These mappings are a starting compatibility surface, not a claim that every commercial ROM has been tested.
+**First system: Atari 2600.** The web frontend loads the Stella 2014 core via EmulatorJS and includes an original in-memory color-cycle diagnostic cartridge, so you can test the CPU/TIA path without supplying a game ROM. The selector also wires NES, Game Boy/Color, Game Boy Advance, SNES, Sega Master System, and Mega Drive/Genesis. The EmulatorJS player toolbar exposes keyboard/controller remapping, save/load states, quick-save/quick-load, and game-save import/export. These mappings are a starting compatibility surface, not a claim that every commercial ROM has been tested. GameCube/Wii are under separate WebAssembly feasibility research; see [the roadmap](docs/roadmap/gamecube-wii-wasm.md).
 
 The browser downloads the emulator engine from the EmulatorJS stable CDN when you start a game. Your selected ROM is held in a local browser object URL and is not uploaded by this page. An internet connection is required to fetch the engine. Game ROMs are not included; use files you are legally entitled to use.
 

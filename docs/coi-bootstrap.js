@@ -1,85 +1,69 @@
-/* Cross-origin-isolation bootstrap for static hosting.
- * The 3DS/Azahar WebAssembly core requires SharedArrayBuffer.
- * GitHub Pages cannot set COOP/COEP response headers, so sw.js adds them.
+/* Enable SharedArrayBuffer only on the dedicated 3DS player route.
+ * Keeping the rest of the UI non-isolated lets public cover-art hosts load normally.
+ * GitHub Pages cannot set COOP/COEP headers, so the service worker adds them to
+ * the player.html?system=3ds navigation response.
  */
 (() => {
   "use strict";
-  const MODE_KEY = "nvd-emu-coi-mode";
-  const userAgent = navigator.userAgent || "";
-  // Orion and Safari use WebKit and need the broadly supported require-corp policy.
-  const webKitBrowser = /AppleWebKit/i.test(userAgent) && !/(Chrome|Chromium|CriOS|Edg|OPR)/i.test(userAgent);
-  const preferredMode = webKitBrowser ? "require-corp" : "credentialless";
-  const getMode = () => {
-    try { return sessionStorage.getItem(MODE_KEY) || ""; } catch (_) { return ""; }
-  };
-  const setMode = mode => {
-    try { sessionStorage.setItem(MODE_KEY, mode); } catch (_) {}
-    window.NVD_COI_MODE = mode;
-  };
+  const wants3dsIsolation = window.location.pathname.endsWith("/player.html")
+    && new URLSearchParams(window.location.search).get("system") === "3ds";
+  const MODE_KEY = "nvd-emu-coi-3ds-reload-v12";
+  const sw = navigator.serviceWorker;
 
-  if (window.crossOriginIsolated === true && typeof SharedArrayBuffer === "function") {
+  if (!wants3dsIsolation) {
+    window.NVD_COI_MODE = "inactive";
+    if (window.isSecureContext && sw) {
+      sw.register("./sw.js").catch(error => {
+        console.warn("NVD-EMU: could not register the service worker.", error);
+      });
+    }
+    return;
+  }
+
+  const setUnavailable = () => {
+    window.NVD_COI_MODE = "unavailable";
+    console.warn("NVD-EMU: 3DS isolation could not be enabled in this browser context.");
+  };
+  const isolated = () => window.crossOriginIsolated === true
+    && typeof SharedArrayBuffer === "function";
+
+  if (isolated()) {
     try { sessionStorage.removeItem(MODE_KEY); } catch (_) {}
     window.NVD_COI_MODE = "isolated";
     return;
   }
-
-  const sw = navigator.serviceWorker;
   if (!window.isSecureContext || !sw) {
-    window.NVD_COI_MODE = "unavailable";
+    setUnavailable();
     return;
   }
 
-  const storedMode = getMode();
-  const currentMode = webKitBrowser ? "require-corp" : storedMode;
-  const startupMode = currentMode || preferredMode;
-  window.NVD_COI_MODE = startupMode;
-  let restarting = false;
-
-  function applyWorkerMode(mode, credentialless) {
-    if (restarting) return;
-    restarting = true;
-    setMode(mode);
-    const controller = sw.controller;
-    if (!controller) {
-      restarting = false;
+  let reloadQueued = false;
+  const attemptReload = () => {
+    if (isolated()) {
+      try { sessionStorage.removeItem(MODE_KEY); } catch (_) {}
+      window.NVD_COI_MODE = "isolated";
       return;
     }
-
-    // Acknowledge the policy change before navigating so the next document
-    // definitely receives the selected COEP mode.
-    let finished = false;
-    const finish = () => {
-      if (finished) return;
-      finished = true;
-      window.location.reload();
-    };
-    try {
-      const channel = new MessageChannel();
-      channel.port1.onmessage = finish;
-      controller.postMessage({ type: "coepCredentialless", value: credentialless }, [channel.port2]);
-      window.setTimeout(finish, 700);
-    } catch (_) {
-      finish();
+    if (reloadQueued) return;
+    reloadQueued = true;
+    let alreadyTried = false;
+    try { alreadyTried = sessionStorage.getItem(MODE_KEY) === "1"; } catch (_) {}
+    if (alreadyTried) {
+      setUnavailable();
+      return;
     }
-  }
+    try { sessionStorage.setItem(MODE_KEY, "1"); } catch (_) {}
+    window.location.reload();
+  };
 
   if (sw.controller) {
-    if (!storedMode || storedMode !== startupMode) {
-      applyWorkerMode(startupMode, startupMode === "credentialless");
-    } else if (storedMode === "credentialless" && !webKitBrowser) {
-      // Try the more widely supported require-corp policy if credentialless failed.
-      applyWorkerMode("require-corp", false);
-    }
-    // Stop retrying after one require-corp attempt; Settings exposes the diagnostic state.
+    attemptReload();
     return;
   }
 
-  sw.addEventListener("controllerchange", () => {
-    if (window.crossOriginIsolated === true) return;
-    applyWorkerMode(startupMode, startupMode === "credentialless");
-  }, { once: true });
+  sw.addEventListener("controllerchange", attemptReload, { once: true });
   sw.register("./sw.js").catch(error => {
-    window.NVD_COI_MODE = "unavailable";
+    setUnavailable();
     console.warn("NVD-EMU: could not register the isolation service worker.", error);
   });
 })();

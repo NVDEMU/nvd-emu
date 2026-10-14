@@ -20,8 +20,7 @@
     const clean = String(name || "Unknown game").replace(/\\/g,"/").split("/").pop();
     return clean.replace(/\.[^.]+$/,"").replace(/_/g," ").trim() || "Untitled game";
   }
-  // Use the final Wikimedia upload URLs directly. Special:FilePath redirects through
-  // Commons and can fail CORS checks in cross-origin-isolated browsers such as Orion.
+  // Use direct Wikimedia upload URLs rather than redirecting Commons image links;
   const commonsDirectFiles =   {
       "Atari 2600 logo-01-06.svg": "https://upload.wikimedia.org/wikipedia/commons/0/0c/Atari_2600_logo-01-06.svg",
       "Atari 7800 logo.svg": "https://upload.wikimedia.org/wikipedia/commons/4/47/Atari_7800_logo.svg",
@@ -72,14 +71,14 @@
   };
   function logoSource(value) {
     if (!value) return "";
-    if (/^(https?:)?\\/\\//i.test(value) || value.startsWith("./") || value.startsWith("../")) return value;
+    if (value.startsWith("http://") || value.startsWith("https://") || value.startsWith("//") || value.startsWith("./") || value.startsWith("../")) return value;
     return commonsDirectFiles[value] || "";
   }
   function setSystemLogo(img, system) {
     img.loading = "lazy";
     img.decoding = "async";
     img.referrerPolicy = "no-referrer";
-    if (window.NVD_COI_MODE === "require-corp") img.crossOrigin = "anonymous";
+    img.crossOrigin = "anonymous";
     img.alt = (system.name || "Console") + " logo";
     const fallback = img.parentElement && img.parentElement.querySelector(".logo-fallback");
     const candidates = [...new Set([

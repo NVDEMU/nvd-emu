@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101114"><meta name="description" content="Manage local NVD-EMU storage and review browser privacy settings."><title>Settings · nvd-emu</title><link rel="icon" href="./nvd-emu-logo.svg" type="image/svg+xml"><link rel="manifest" href="./manifest.webmanifest"><link rel="stylesheet" href="./site.css"></head><body><div class="shell"><aside>
+  <div class="brand"><img src="./nvd-emu-logo.svg" alt="nvd-emu logo"><div><strong>nvd-emu</strong><span class="eyebrow">MULTI-SYSTEM EMULATOR</span></div></div>
+  <div class="eyebrow" style="padding:12px 9px 0">WORKSPACE</div>
+  <a class="nav " href="./index.html">▦ &nbsp; Overview</a>
+  <a class="nav " href="./library.html">▤ &nbsp; Game library</a>
+  <a class="nav " href="./systems.html">◈ &nbsp; Systems</a>
+  <a class="nav " href="./player.html">▶ &nbsp; Player</a>
+  <a class="nav active" href="./settings.html">⚙ &nbsp; Settings</a>
+  <div class="side-note"><strong style="color:#f1f1f3">Browser-first retro gaming</strong><br>ROMs stay in this browser profile. EmulatorJS cores load online when you start a game.</div>
+</aside><main>
+  <header class="topline"><div><div class="eyebrow">NVD-EMU WEB / SETTINGS</div><h1>Browser storage.</h1><p style="margin:0">See what NVD-EMU stores locally and how much space your browser allows.</p></div><span class="pill">ON THIS DEVICE</span></header>
+  <section class="card"><div class="card-head"><h2>Library storage</h2><button id="refresh" class="subtle">Refresh</button></div><div class="card-body">
+    <div class="form-row"><div><div class="eyebrow">GAMES SAVED</div><h2 id="saved-count" style="font-size:28px;margin-top:8px">—</h2></div><div><div class="eyebrow">PERSISTENT STORAGE</div><h2 id="persisted-state" style="font-size:18px;margin-top:10px">Checking…</h2></div></div>
+    <div class="eyebrow" style="margin-top:22px">SPACE USED</div><div class="storage-meter"><span id="storage-bar"></span></div><div id="storage-usage" class="muted" style="font-size:12px">Checking usage…</div>
+    <div id="settings-status" class="status" role="status">Checking local database…</div>
+    <div class="page-toolbar"><button id="request-persistence" class="primary">Request persistent storage</button><a class="button" href="./library.html">Manage game library</a></div>
+  </div></section>
+  <section class="card"><div class="card-head"><h2>Privacy and compatibility</h2></div><div class="card-body">
+    <div class="notice">ROM files and the library database stay in your browser profile on this device. NVD-EMU does not upload your selected games to its GitHub repository. EmulatorJS core files are downloaded from its CDN, and console/game artwork is retrieved from external image sources.</div>
+    <p style="font-size:12px">Browser storage is tied to this site's origin and browser profile. Using a private window, another browser, clearing website data, or running out of storage can make the library unavailable. Persistent storage is a browser request, not an absolute guarantee.</p>
+    <p style="font-size:12px">PS1, Amiga and 3DO games may need BIOS/firmware files that you supply yourself. BIOS files are not bundled. GameCube and Wii remain research targets and are not currently integrated playable systems.</p>
+    <button id="clear-library" class="subtle">Clear all saved games…</button>
+  </div></section>
+  <div class="footer">NVD-EMU is a browser frontend, not a ROM download service. Keep backups of save files and use games you are legally entitled to use.</div>
+</main></div>
+<script src="./systems-data.js"></script><script src="./storage.js"></script>
+<script>
+(() => {
+  const $=id=>document.getElementById(id);
+  const size=n=>n<1024*1024?(n/1024).toFixed(1)+" KB":n<1024*1024*1024?(n/1024/1024).toFixed(1)+" MB":(n/1024/1024/1024).toFixed(2)+" GB";
+  async function refresh(){
+    try{
+      const games=await window.NVDLibrary.list();$("saved-count").textContent=String(games.length);
+      const [persistent,estimate]=await Promise.all([window.NVDLibrary.isPersistent(),window.NVDLibrary.storageEstimate()]);
+      $("persisted-state").textContent=persistent?"Granted":"Not guaranteed";
+      if(estimate&&typeof estimate.usage==="number"&&typeof estimate.quota==="number"){
+        $("storage-usage").textContent=size(estimate.usage)+" used of approximately "+size(estimate.quota)+" available to this origin";
+        $("storage-bar").style.width=Math.min(100,estimate.quota?estimate.usage/estimate.quota*100:0)+"%";
+      }else $("storage-usage").textContent="This browser doesn't expose a storage estimate.";
+      $("settings-status").textContent="Local library database is available.";
+      $("settings-status").className="status ok";
+    }catch(error){$("settings-status").textContent="Storage unavailable: "+error.message;$("settings-status").className="status error";}
+  }
+  $("refresh").addEventListener("click",refresh);
+  $("request-persistence").addEventListener("click",async()=>{
+    const granted=await window.NVDLibrary.requestPersistence();
+    $("settings-status").textContent=granted?"Persistent storage was granted by the browser.":"The browser didn't grant persistent storage. You can still use the library, but the browser may clear its data.";
+    $("settings-status").className="status "+(granted?"ok":"");
+    await refresh();
+  });
+  $("clear-library").addEventListener("click",async()=>{
+    if(!window.confirm("Delete every game stored in the NVD-EMU browser library? This doesn't delete the original ROM files on your device."))return;
+    try{await window.NVDLibrary.clear();$("settings-status").textContent="All saved library entries have been removed.";$("settings-status").className="status ok";await refresh();}
+    catch(error){$("settings-status").textContent="Could not clear library: "+error.message;$("settings-status").className="status error";}
+  });
+  window.NVDLibrary.requestPersistence().catch(()=>{});refresh();
+})();
+</script></body></html>

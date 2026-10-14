@@ -43,7 +43,7 @@ jobs:
           if manifest.get("name") != "nvd-emu" or manifest.get("start_url") != "./":
               raise SystemExit("The PWA manifest is missing required nvd-emu fields")
           catalog = Path("docs/systems-data.js").read_text(encoding="utf-8")
-          required_systems = ("atari2600", "atari7800", "a5200", "jaguar", "nes", "snes", "gba", "n64", "psx", "c64", "coleco", "ngp", "pcfx", "3do", "amiga", "dos", "pet", "plus4", "fds", "mame", "3ds", "neoGeo", "supergrafx")
+          required_systems = ("atari2600", "atari7800", "a5200", "jaguar", "nes", "snes", "gba", "n64", "psx", "c64", "coleco", "ngp", "pcfx", "3do", "amiga", "dos", "pet", "plus4", "fds", "mame", "3ds", "neoGeo", "supergrafx", "cdi")
           for required in required_systems:
               if required not in catalog:
                   raise SystemExit(f"Missing configured emulator system: {required}")

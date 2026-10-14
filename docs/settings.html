@@ -1,76 +1,70 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101114"><meta name="description" content="Manage local NVD-EMU storage and review browser privacy settings."><title>Settings · nvd-emu</title><link rel="icon" href="./nvd-emu-logo.svg" type="image/svg+xml"><link rel="manifest" href="./manifest.webmanifest"><script src="./coi-bootstrap.js"></script><link rel="stylesheet" href="./site.css"></head><body><div class="shell"><aside>
-  <div class="brand"><img src="./nvd-emu-logo.svg" alt="nvd-emu logo"><div><strong>nvd-emu</strong><span class="eyebrow">MULTI-SYSTEM EMULATOR</span></div></div>
-  <div class="eyebrow" style="padding:12px 9px 0">WORKSPACE</div>
-  <a class="nav " href="./index.html">▦ &nbsp; Overview</a>
-  <a class="nav " href="./library.html">▤ &nbsp; Game library</a>
-  <a class="nav " href="./systems.html">◈ &nbsp; Systems</a>
-  <a class="nav " href="./player.html">▶ &nbsp; Player</a>
-  <a class="nav active" href="./settings.html">⚙ &nbsp; Settings</a>
-  <div class="side-note"><strong style="color:#f1f1f3">Browser-first retro gaming</strong><br>ROMs stay in this browser profile. EmulatorJS cores load online when you start a game.</div>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101114">
+<meta name="description" content="Manage NVD-EMU browser storage, recover orphaned game data, and configure playback defaults.">
+<title>Settings · nvd-emu</title><link rel="icon" href="./nvd-emu-logo.svg" type="image/svg+xml"><link rel="manifest" href="./manifest.webmanifest"><script src="./coi-bootstrap.js"></script><link rel="stylesheet" href="./site.css">
+<style>
+.settings-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:4px 0 20px}.settings-metric{padding:15px;border:1px solid #30313a;border-radius:12px;background:rgba(255,255,255,.025);min-width:0}.settings-metric .eyebrow{font-size:10px}.settings-metric strong{display:block;font-size:22px;margin-top:8px;overflow-wrap:anywhere}.settings-help{font-size:12px;line-height:1.65;color:#a9abb6}.settings-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(190px,290px);gap:18px;align-items:center;padding:14px 0;border-bottom:1px solid #2c2d35}.settings-row:last-child{border-bottom:0}.settings-row label{font-size:13px;font-weight:650}.settings-row select,.settings-row input[type=range]{width:100%;margin-top:8px}.danger-zone{border-color:#754147!important}.danger-action{background:#842b32!important;color:#fff!important;border:1px solid #b64d55!important}.danger-action:hover{background:#a2313b!important}.recovery-notice{padding:13px 15px;background:rgba(220,41,43,.09);border:1px solid #63363a;border-radius:10px;color:#e2c4c7;font-size:12px;line-height:1.65;margin:12px 0 16px}.inline-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.inventory{font-size:12px;line-height:1.7;overflow-wrap:anywhere}details.diagnostics{border:1px solid #30313a;border-radius:10px;padding:12px 14px;margin-top:14px}details.diagnostics summary{cursor:pointer;font-size:12px;font-weight:650}#diagnostics-output{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;font-size:11px;color:#a9abb6}@media(max-width:700px){.settings-row{grid-template-columns:1fr;gap:8px}}
+</style></head><body><div class="shell"><aside>
+<div class="brand"><img src="./nvd-emu-logo.svg" alt="nvd-emu logo"><div><strong>nvd-emu</strong><span class="eyebrow">MULTI-SYSTEM EMULATOR</span></div></div>
+<div class="eyebrow" style="padding:12px 9px 0">WORKSPACE</div><a class="nav " href="./index.html">▦ &nbsp; Overview</a><a class="nav " href="./library.html">▤ &nbsp; Game library</a><a class="nav " href="./systems.html">◈ &nbsp; Systems</a><a class="nav " href="./player.html">▶ &nbsp; Player</a><a class="nav active" href="./settings.html">⚙ &nbsp; Settings</a>
+<div class="side-note"><strong style="color:#f1f1f3">Browser-first retro gaming</strong><br>ROMs stay in this browser profile. Emulator engines load online when you start a game.</div>
 </aside><main>
-  <header class="topline"><div><div class="eyebrow">NVD-EMU WEB / SETTINGS</div><h1>Browser storage.</h1><p style="margin:0">See what NVD-EMU stores locally and how much space your browser allows.</p></div><span class="pill">ON THIS DEVICE</span></header>
-  <section class="card"><div class="card-head"><h2>Library storage</h2><button id="refresh" class="subtle">Refresh</button></div><div class="card-body">
-    <div class="form-row"><div><div class="eyebrow">GAMES SAVED</div><h2 id="saved-count" style="font-size:28px;margin-top:8px">—</h2></div><div><div class="eyebrow">PERSISTENT STORAGE</div><h2 id="persisted-state" style="font-size:18px;margin-top:10px">Checking…</h2></div></div>
-    <div class="eyebrow" style="margin-top:22px">SPACE USED</div><div class="storage-meter"><span id="storage-bar"></span></div><div id="storage-usage" class="muted" style="font-size:12px">Checking usage…</div>
-    <div id="settings-status" class="status" role="status">Checking local database…</div>
-    <div style="margin-top:18px"><div class="eyebrow">EXPERIMENTAL 3DS THREADING</div><h2 id="isolation-state" style="font-size:18px;margin-top:8px">Checking…</h2><p id="isolation-note" style="font-size:12px;margin:7px 0 0">3DS needs SharedArrayBuffer through cross-origin isolation. Orion uses the require-corp policy path; the experimental core still needs a real game test.</p><p id="isolation-details" style="font-size:11px;margin:8px 0 0;overflow-wrap:anywhere;line-height:1.6">Collecting browser diagnostics…</p></div>
-    <div class="page-toolbar"><button id="request-persistence" class="primary">Request persistent storage</button><a class="button" href="./library.html">Manage game library</a><a class="button" href="./player.html?system=3ds">Open 3DS player test</a></div>
-  </div></section>
-  <section class="card"><div class="card-head"><h2>Privacy and compatibility</h2></div><div class="card-body">
-    <div class="notice">ROM files and the library database stay in your browser profile on this device. NVD-EMU does not upload your selected games to its GitHub repository. EmulatorJS core files are downloaded from its CDN, and console/game artwork is retrieved from external image sources.</div>
-    <p style="font-size:12px">Browser storage is tied to this site's origin and browser profile. Using a private window, another browser, clearing website data, or running out of storage can make the library unavailable. Persistent storage is a browser request, not an absolute guarantee.</p>
-    <p style="font-size:12px">PS1, Amiga and 3DO games may need BIOS/firmware files that you supply yourself. BIOS files are not bundled. GameCube and Wii remain research targets and are not currently integrated playable systems.</p>
-    <button id="clear-library" class="subtle">Clear all saved games…</button>
-  </div></section>
-  <div class="footer">NVD-EMU is a browser frontend, not a ROM download service. Keep backups of save files and use games you are legally entitled to use.</div>
-</main></div>
-<script src="./systems-data.js"></script><script src="./storage.js"></script>
+<header class="topline"><div><div class="eyebrow">NVD-EMU WEB / SETTINGS</div><h1>Settings & storage recovery.</h1><p style="margin:0">Inspect browser storage, clear orphaned game data, and set playback defaults.</p></div><span class="pill">THIS BROWSER</span></header>
+<section class="card"><div class="card-head"><h2>Storage overview</h2><button id="refresh" class="subtle">Scan storage</button></div><div class="card-body">
+<div class="settings-metrics"><div class="settings-metric"><div class="eyebrow">VISIBLE GAMES</div><strong id="saved-count">—</strong><div class="settings-help">Rows available in the current library</div></div><div class="settings-metric"><div class="eyebrow">PERSISTENT STORAGE</div><strong id="persisted-state">Checking…</strong><div class="settings-help">Whether this browser promises not to evict the site automatically</div></div><div class="settings-metric"><div class="eyebrow">NVD-EMU DATABASES</div><strong id="db-count">—</strong><div class="settings-help">Recognized app and legacy databases</div></div></div>
+<div class="eyebrow">TOTAL SITE-ORIGIN SPACE</div><div class="storage-meter"><span id="storage-bar"></span></div><div id="storage-usage" class="muted" style="font-size:12px">Reading browser storage estimate…</div><div id="storage-breakdown" class="inventory muted" style="margin-top:8px">Storage details have not been scanned yet.</div><div id="settings-status" class="status" role="status" aria-live="polite">Ready to scan browser storage.</div>
+<div class="inline-links"><button id="request-persistence" class="primary">Request persistent storage</button><a class="button" href="./library.html">Manage library</a><a class="button" href="./player.html?system=gamecube">Test GameCube player</a><a class="button" href="./player.html?system=3ds">Test 3DS player</a></div>
+<details class="diagnostics"><summary>Browser diagnostics (run on demand)</summary><p class="settings-help">Diagnostics run only when requested, so they cannot block normal Settings use.</p><button id="run-diagnostics" class="subtle">Run diagnostics</button><pre id="diagnostics-output">Diagnostics have not been run.</pre></details></div></section>
+<section class="card danger-zone"><div class="card-head"><h2>Game data recovery</h2><span class="pill">DESTRUCTIVE</span></div><div class="card-body">
+<p class="settings-help">Use this if duplicates or orphaned ROM copies occupy space but no longer appear in the library. Recovery targets NVD-EMU-owned IndexedDB databases—including old records the current UI cannot list—and identified NVD-EMU caches and app-specific legacy data keys.</p>
+<div class="recovery-notice"><strong>Before you continue:</strong> Clear All permanently removes NVD-EMU game copies and saved app data from this browser profile. It does not delete original ROM files elsewhere on your device. Unrelated app databases/caches on the same website origin are left untouched. Close other NVD-EMU tabs first if a database is reported as blocked.</div>
+<button id="clear-all-data" class="danger-action">Clear all NVD-EMU game data…</button><p id="recovery-result" class="settings-help" style="margin-top:12px">No recovery operation has run in this session.</p>
+</div></section>
+<section class="card"><div class="card-head"><h2>Playback defaults</h2><button id="reset-preferences" class="subtle">Reset preferences</button></div><div class="card-body">
+<div class="settings-row"><div><label for="default-system">Default system</label><p class="settings-help">Used when opening the standalone Player with no system in its URL.</p></div><div><select id="default-system"></select></div></div>
+<div class="settings-row"><div><label for="default-volume">Default emulator volume <span id="volume-label">80%</span></label><p class="settings-help">Initial volume for EmulatorJS games; in-game volume controls still work.</p></div><div><input id="default-volume" type="range" min="0" max="100" step="5" value="80"></div></div>
+<div class="settings-row"><div><label for="request-persist-on-load">Request persistent storage automatically</label><p class="settings-help">The browser may refuse this request; it is not a guarantee.</p></div><div><input id="request-persist-on-load" type="checkbox"></div></div><div id="preferences-status" class="status" role="status">Preferences are loaded from this browser profile.</div>
+</div></section>
+<section class="card"><div class="card-head"><h2>App-owned storage inventory</h2></div><div class="card-body"><p class="settings-help">Storage estimates cover the entire origin, not just NVD-EMU. The recovery operation leaves unrelated app resources alone.</p>
+<div class="inventory"><strong>Detected NVD-EMU IndexedDB databases:</strong><div id="app-db-list">Not scanned yet.</div><strong style="display:block;margin-top:9px">Detected NVD-EMU caches:</strong><div id="app-cache-list">Not scanned yet.</div><strong style="display:block;margin-top:9px">Other visible IndexedDB names (left untouched):</strong><div id="other-db-list">Not scanned yet.</div></div></div></section>
+<div class="footer">NVD-EMU is a browser frontend, not a ROM download service. Keep backups of save files and use games you are legally entitled to use.</div>
+</main></div><script src="./systems-data.js"></script><script src="./storage.js"></script>
 <script>
 (() => {
-  const $=id=>document.getElementById(id);
-  const size=n=>n<1024*1024?(n/1024).toFixed(1)+" KB":n<1024*1024*1024?(n/1024/1024).toFixed(1)+" MB":(n/1024/1024/1024).toFixed(2)+" GB";
-  function updateIsolation(){
-    const isolated=window.crossOriginIsolated===true;
-    const sab=typeof SharedArrayBuffer==="function";
-    $("isolation-state").textContent="Enabled only on the dedicated 3DS player";
-    $("isolation-note").textContent="This settings page intentionally stays outside cross-origin isolation so third-party game covers can load normally. Open the dedicated 3DS player to check whether Orion allows the required isolation and SharedArrayBuffer.";
-    $("isolation-details").textContent=[
-      "This page isolated="+isolated,
-      "SharedArrayBuffer="+sab,
-      "secureContext="+(window.isSecureContext===true),
-      "serviceWorkerSupported="+!!navigator.serviceWorker,
-      "serviceWorkerControlsPage="+!!(navigator.serviceWorker&&navigator.serviceWorker.controller),
-      "policy="+(window.NVD_COI_MODE||"unknown"),
-      "browser="+(navigator.userAgent||"unknown")
-    ].join(" · ");
-  }
-  updateIsolation();
-  async function refresh(){
-    try{
-      const games=await window.NVDLibrary.list();$("saved-count").textContent=String(games.length);
-      const [persistent,estimate]=await Promise.all([window.NVDLibrary.isPersistent(),window.NVDLibrary.storageEstimate()]);
-      $("persisted-state").textContent=persistent?"Granted":"Not guaranteed";
-      if(estimate&&typeof estimate.usage==="number"&&typeof estimate.quota==="number"){
-        $("storage-usage").textContent=size(estimate.usage)+" used of approximately "+size(estimate.quota)+" available to this origin";
-        $("storage-bar").style.width=Math.min(100,estimate.quota?estimate.usage/estimate.quota*100:0)+"%";
-      }else $("storage-usage").textContent="This browser doesn't expose a storage estimate.";
-      $("settings-status").textContent="Local library database is available.";
-      $("settings-status").className="status ok";
-    }catch(error){$("settings-status").textContent="Storage unavailable: "+error.message;$("settings-status").className="status error";}
-  }
-  $("refresh").addEventListener("click",refresh);
-  $("request-persistence").addEventListener("click",async()=>{
-    const granted=await window.NVDLibrary.requestPersistence();
-    $("settings-status").textContent=granted?"Persistent storage was granted by the browser.":"The browser didn't grant persistent storage. You can still use the library, but the browser may clear its data.";
-    $("settings-status").className="status "+(granted?"ok":"");
-    await refresh();
-  });
-  $("clear-library").addEventListener("click",async()=>{
-    if(!window.confirm("Delete every game stored in the NVD-EMU browser library? This doesn't delete the original ROM files on your device."))return;
-    try{await window.NVDLibrary.clear();$("settings-status").textContent="All saved library entries have been removed.";$("settings-status").className="status ok";await refresh();}
-    catch(error){$("settings-status").textContent="Could not clear library: "+error.message;$("settings-status").className="status error";}
-  });
-  window.NVDLibrary.requestPersistence().catch(()=>{});refresh();
+ const $=id=>document.getElementById(id),PREFS_KEY="nvd-emu-settings-v1";
+ const size=n=>!Number.isFinite(Number(n))?"Unknown":n<1048576?(n/1024).toFixed(1)+" KB":n<1073741824?(n/1048576).toFixed(1)+" MB":(n/1073741824).toFixed(2)+" GB";
+ const readPrefs=()=>{try{return JSON.parse(localStorage.getItem(PREFS_KEY)||"{}")||{};}catch(_){return {};}};
+ function writePrefs(p){try{localStorage.setItem(PREFS_KEY,JSON.stringify(p));$("preferences-status").textContent="Preferences saved in this browser.";}catch(error){$("preferences-status").textContent="Could not save preferences: "+error.message;}}
+ function setStatus(id,message,kind){$(id).textContent=message;$(id).className="status "+(kind||"");}
+ const systems=window.NVD_SYSTEMS||{};
+ for(const [id,system]of Object.entries(systems).sort((a,b)=>a[1].name.localeCompare(b[1].name))){const option=document.createElement("option");option.value=id;option.textContent=system.name;$("default-system").append(option);}
+ const prefs=readPrefs();$("default-system").value=systems[prefs.defaultSystem]?prefs.defaultSystem:(systems.nes?"nes":Object.keys(systems)[0]);$("default-volume").value=Number.isFinite(Number(prefs.volume))?Math.max(0,Math.min(100,Number(prefs.volume))):80;$("volume-label").textContent=$("default-volume").value+"%";$("request-persist-on-load").checked=prefs.requestPersistentStorage===true;
+ async function refresh(){
+  setStatus("settings-status","Scanning visible library and app storage…");
+  let inventory={databases:[],appDatabases:[],appCaches:[],databaseEnumerationSupported:false};try{inventory=await window.NVDLibrary.inspectAppStorage();}catch(error){setStatus("settings-status","Could not inspect app storage: "+error.message,"error");}
+  let games=null;try{games=await window.NVDLibrary.list();$("saved-count").textContent=String(games.length);}catch(error){$("saved-count").textContent="Unavailable";setStatus("settings-status","Visible library unavailable: "+error.message,"error");}
+  const [persistent,estimate]=await Promise.all([window.NVDLibrary.isPersistent(),window.NVDLibrary.storageEstimate()]);$("persisted-state").textContent=persistent?"Granted":"Not guaranteed";$("db-count").textContent=String(inventory.appDatabases.length);
+  $("app-db-list").textContent=inventory.appDatabases.length?inventory.appDatabases.join(", "):"No matching app-owned database names detected.";$("app-cache-list").textContent=inventory.appCaches.length?inventory.appCaches.join(", "):"No matching app-owned cache names detected.";
+  const other=inventory.databases.filter(name=>!inventory.appDatabases.includes(name));$("other-db-list").textContent=other.length?other.join(", "):"None reported.";
+  if(estimate&&typeof estimate.usage==="number"&&typeof estimate.quota==="number"){$("storage-usage").textContent=size(estimate.usage)+" used of approximately "+size(estimate.quota)+" available to this site origin";$("storage-bar").style.width=Math.min(100,estimate.quota?estimate.usage/estimate.quota*100:0)+"%";const lines=Object.entries(estimate.usageDetails||{}).filter(([,value])=>Number.isFinite(value)).map(([name,value])=>name+": "+size(value));$("storage-breakdown").textContent=lines.length?lines.join(" · "):"Browser does not expose per-storage-type usage. Other apps using this origin may contribute to the total.";}else{$("storage-usage").textContent="This browser does not expose a storage estimate.";$("storage-breakdown").textContent="Storage type and quota details are unavailable.";}
+  if(games!==null)setStatus("settings-status",inventory.appDatabases.length>1?"Scan complete. Multiple app database names were found; Clear All can remove legacy databases too.":"Scan complete. Clear All checks orphaned app data even when the library cannot list an entry.","ok");
+  $("recovery-result").textContent=inventory.databaseEnumerationSupported?"Recovery can enumerate this origin’s IndexedDB database names.":"This browser cannot enumerate every database name; recovery also targets known legacy NVD-EMU names.";
+ }
+ $("refresh").addEventListener("click",()=>refresh().catch(error=>setStatus("settings-status",error.message,"error")));
+ $("request-persistence").addEventListener("click",async()=>{const granted=await window.NVDLibrary.requestPersistence();setStatus("settings-status",granted?"The browser granted persistent storage.":"The browser did not grant persistent storage; data may still be evicted.",granted?"ok":"");await refresh();});
+ $("default-system").addEventListener("change",()=>writePrefs({...readPrefs(),defaultSystem:$("default-system").value}));$("default-volume").addEventListener("input",()=>{$("volume-label").textContent=$("default-volume").value+"%";writePrefs({...readPrefs(),volume:Number($("default-volume").value)});});
+ $("request-persist-on-load").addEventListener("change",()=>{const enabled=$("request-persist-on-load").checked;writePrefs({...readPrefs(),requestPersistentStorage:enabled});if(enabled)window.NVDLibrary.requestPersistence().then(granted=>setStatus("preferences-status",granted?"Persistent storage granted.":"Persistent storage request was denied.",granted?"ok":""));});
+ $("reset-preferences").addEventListener("click",()=>{try{localStorage.removeItem(PREFS_KEY);}catch(_){}$("default-system").value=systems.nes?"nes":Object.keys(systems)[0];$("default-volume").value=80;$("volume-label").textContent="80%";$("request-persist-on-load").checked=false;setStatus("preferences-status","Playback defaults reset.","ok");});
+ $("run-diagnostics").addEventListener("click",async()=>{const inventory=await window.NVDLibrary.inspectAppStorage().catch(()=>({databases:[],appCaches:[],databaseEnumerationSupported:false}));$("diagnostics-output").textContent=["Page: "+location.href,"Secure context: "+(window.isSecureContext===true),"Cross-origin isolated: "+(window.crossOriginIsolated===true),"SharedArrayBuffer: "+(typeof SharedArrayBuffer),"IndexedDB: "+("indexedDB"in window),"IndexedDB enumeration: "+inventory.databaseEnumerationSupported,"Databases: "+(inventory.databases.join(", ")||"none reported"),"NVD-EMU caches: "+(inventory.appCaches.join(", ")||"none reported"),"Service worker supported: "+!!navigator.serviceWorker,"Service worker controls page: "+!!(navigator.serviceWorker&&navigator.serviceWorker.controller),"WebGPU: "+!!navigator.gpu,"Browser: "+(navigator.userAgent||"unknown")].join("\n");});
+ $("clear-all-data").addEventListener("click",async()=>{
+  let estimate=null;try{estimate=await window.NVDLibrary.storageEstimate();}catch(_){}const used=estimate&&Number.isFinite(estimate.usage)?size(estimate.usage):"an unknown amount of";
+  if(!window.confirm("Clear all NVD-EMU game data for this browser profile? This origin reports "+used+" of total storage in use. This permanently deletes locally saved NVD-EMU ROM copies, legacy app databases and app-owned caches, including orphaned records the library cannot see. Original files on disk and unrelated app databases are not deleted."))return;
+  const typed=window.prompt("Final confirmation: type CLEAR to remove NVD-EMU game data.");if(String(typed||"").trim().toUpperCase()!=="CLEAR"){setStatus("settings-status","Recovery cancelled. No cleanup was run.");return;}
+  $("clear-all-data").disabled=true;setStatus("settings-status","Removing NVD-EMU databases, legacy game data and app caches…");
+  try{const result=await window.NVDLibrary.clearAllAppData();await refresh();$("recovery-result").textContent="Recovery attempted: "+[...new Set(result.databasesRemoved)].length+" app database name(s), "+result.cachesRemoved.length+" cache(s), "+result.opfsEntriesRemoved.length+" private file-system item(s), and "+result.legacyKeysRemoved+" legacy key(s)."+(result.errors.length?" Warnings: "+result.errors.join(" | "):"");setStatus("settings-status",result.errors.length?"Recovery finished with warnings. Close other NVD-EMU tabs and retry blocked database deletions.":"NVD-EMU data cleanup completed. The visible library should be empty; origin-wide usage may take a moment to settle.",result.errors.length?"error":"ok");if(result.afterEstimate&&Number.isFinite(result.afterEstimate.usage))$("storage-usage").textContent=size(result.afterEstimate.usage)+" used after cleanup (origin-wide estimate");}
+  catch(error){setStatus("settings-status","Recovery failed: "+(error.message||String(error)),"error");$("recovery-result").textContent="Complete cleanup was not confirmed. Close other NVD-EMU tabs and retry.";}finally{$("clear-all-data").disabled=false;}
+ });
+ const initial=readPrefs();if(initial.requestPersistentStorage===true)window.NVDLibrary.requestPersistence().catch(()=>{});refresh().catch(error=>setStatus("settings-status","Storage scan failed: "+error.message,"error"));
 })();
 </script></body></html>

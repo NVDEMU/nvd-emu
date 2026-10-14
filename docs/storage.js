@@ -1,16 +1,36 @@
 (() => {
   "use strict";
   const DB_NAME = "nvd-emu-library-v1";
+  const DB_VERSION = 2;
   const STORE = "games";
   let dbPromise;
   function openDB() {
     if (!("indexedDB" in window)) return Promise.reject(new Error("This browser does not provide IndexedDB storage."));
     if (!dbPromise) {
       dbPromise = new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, 1);
-        request.onupgradeneeded = () => {
-          if (!request.result.objectStoreNames.contains(STORE)) {
-            request.result.createObjectStore(STORE, { keyPath: "key" });
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = event => {
+          const db = request.result;
+          const tx = request.transaction;
+          const store = db.objectStoreNames.contains(STORE)
+            ? tx.objectStore(STORE)
+            : db.createObjectStore(STORE, { keyPath: "key" });
+          if (!store.indexNames.contains("duplicateKey")) {
+            store.createIndex("duplicateKey", "duplicateKey", { unique: false });
+          }
+          // Add an index without loading entire ROM files into memory during duplicate checks.
+          if (event.oldVersion < 2) {
+            const cursorRequest = store.openCursor();
+            cursorRequest.onsuccess = () => {
+              const cursor = cursorRequest.result;
+              if (!cursor) return;
+              const record = cursor.value;
+              if (!record.duplicateKey && record.systemId && record.name) {
+                record.duplicateKey = duplicateKey(record.systemId, record.name, record.size);
+                cursor.update(record);
+              }
+              cursor.continue();
+            };
           }
         };
         request.onsuccess = () => {
@@ -37,19 +57,39 @@
       catch (error) { try { tx.abort(); } catch (_) {} if (!settled) { settled = true; reject(error); } }
     }));
   }
+  function duplicateKey(systemId, name, size) {
+    return String(systemId) + ":" + String(name || "").toLowerCase() + ":" + Number(size || 0);
+  }
   function gameKey(file, systemId) {
     return systemId + ":" + file.name.toLowerCase() + ":" + file.size + ":" + file.lastModified;
   }
   async function save(file, systemId) {
     if (!(file instanceof Blob)) throw new Error("Choose a game file first.");
+    const dupeKey = duplicateKey(systemId, file.name, file.size);
     const data = await file.arrayBuffer();
     const record = {
-      key: gameKey(file, systemId), systemId, name: file.name,
+      key: gameKey(file, systemId), duplicateKey: dupeKey, systemId, name: file.name,
       size: file.size, lastModified: file.lastModified,
       type: file.type || "application/octet-stream", addedAt: Date.now(), data
     };
-    await transact("readwrite", store => { store.put(record); });
-    return record;
+    return await transact("readwrite", (store, finish, tx) => {
+      const lookup = store.index("duplicateKey").getKey(dupeKey);
+      lookup.onsuccess = () => {
+        if (lookup.result !== undefined) {
+          // Return lightweight metadata only; don't read the existing ROM bytes again.
+          finish({
+            key: lookup.result, duplicateKey: dupeKey, systemId, name: file.name,
+            size: file.size, lastModified: file.lastModified,
+            type: file.type || "application/octet-stream", alreadyExists: true
+          });
+          return;
+        }
+        const add = store.add(record);
+        add.onsuccess = () => finish({ ...record, alreadyExists: false });
+        add.onerror = () => { try { tx.abort(); } catch (_) {} };
+      };
+      lookup.onerror = () => { try { tx.abort(); } catch (_) {} };
+    });
   }
   async function list() {
     return await transact("readonly", (store, finish) => {

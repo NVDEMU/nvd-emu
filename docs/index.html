@@ -592,7 +592,12 @@
       return;
     }
     if (select.value === "3ds" && window.crossOriginIsolated !== true) {
-      setStatus("The 3DS core needs SharedArrayBuffer. NVD-EMU could not enable cross-origin isolation in this browser, so 3DS cannot start here yet. Try reloading in a supported desktop browser.", "error");
+      setStatus("Preparing the isolated 3DS player…");
+      window.NVDLibrary.save(selectedFile, "3ds").then(record => {
+        window.location.href = "./player.html?system=3ds&launch=" + encodeURIComponent(record.key);
+      }).catch(error => {
+        setStatus("Could not prepare the 3DS player: " + error.message, "error");
+      });
       return;
     }
     if (!accepts(selectedFile)) {

@@ -43,7 +43,7 @@ jobs:
           if manifest.get("name") != "nvd-emu" or manifest.get("start_url") != "./":
               raise SystemExit("The PWA manifest is missing required nvd-emu fields")
           catalog = Path("docs/systems-data.js").read_text(encoding="utf-8")
-          required_systems = ("atari2600", "atari7800", "a5200", "jaguar", "nes", "snes", "gba", "n64", "psx", "c64", "coleco", "ngp", "pcfx", "3do", "amiga", "dos", "pet", "plus4", "fds", "mame", "3ds", "gamecube", "neoGeo", "supergrafx", "cdi")
+          required_systems = ("atari2600", "atari7800", "a5200", "jaguar", "nes", "snes", "gba", "n64", "psx", "c64", "coleco", "ngp", "pcfx", "3do", "amiga", "dos", "pet", "plus4", "fds", "mame", "3ds", "gamecube", "wii", "neoGeo", "supergrafx", "cdi")
           for required in required_systems:
               if required not in catalog:
                   raise SystemExit(f"Missing configured emulator system: {required}")
@@ -85,7 +85,7 @@ jobs:
           boxart_code = artwork.split("function setBoxArt", 1)[1].split("window.NVD_ARTWORK", 1)[0]
           if "crossOrigin" in boxart_code:
               raise SystemExit("Game-cover images must not force CORS mode; some thumbnail hosts do not permit it")
-          if "is3dsPlayerNavigation" not in service_worker or "nvd-emu-web-shell-v15" not in service_worker:
+          if "is3dsPlayerNavigation" not in service_worker or "nvd-emu-web-shell-v16" not in service_worker:
               raise SystemExit("Cross-origin isolation must be scoped to the 3DS player and use the refreshed cache version")
           if "coepCredentialless" in service_worker:
               raise SystemExit("Legacy global COEP state must not be used; it can break artwork on non-3DS pages")
@@ -100,8 +100,18 @@ jobs:
               raise SystemExit("Virtual Boy and Nintendo 3DS system logos must use actual logo assets")
           if "function renderSystemCatalog()" not in html:
               raise SystemExit("The dynamic system picker and compatibility list are missing")
-          if "wasm-dolphin" not in html or "retail-disc library flow" not in html or "gamecube" not in catalog:
-              raise SystemExit("GameCube WASM integration marker or system profile is missing")
+          if "wasm-dolphin" not in html or "retail-disc library flow" not in html or "gamecube" not in catalog or "wii" not in catalog:
+              raise SystemExit("GameCube/Wii WASM integration marker or system profiles are missing")
+          engine_index = Path("docs/gamecube-engine/index.html").read_text(encoding="utf-8")
+          engine_app = Path("docs/gamecube-engine/src/app.js").read_text(encoding="utf-8")
+          if 'id="keyboardControlsButton"' not in engine_index or "function wireKeyboardRemapping()" not in engine_app:
+              raise SystemExit("GameCube/Wii keyboard remapping controls are missing")
+          if 'localStorage.getItem(OSD_PREF_KEY) === "1"' not in engine_app or 'wasm-dolphin.osd-visible-v2' not in engine_app:
+              raise SystemExit("Performance statistics must be hidden by default on the game screen")
+          if 'id="fullscreenButton"' not in engine_index or 'Enter fullscreen' not in engine_app:
+              raise SystemExit("The GameCube/Wii player must expose a fullscreen control")
+          if 'id="player-fullscreen"' not in player_page or 'id==="wii"' not in player_page:
+              raise SystemExit("The standard player must provide fullscreen and a Wii launch route")
           if "clearAllAppData" not in Path("docs/storage.js").read_text(encoding="utf-8"):
               raise SystemExit("Orphaned-storage recovery is missing")
           if not Path("docs/gamecube-bridge.js").is_file() or not Path(".github/workflows/sync-gamecube-engine.yml").is_file():

@@ -45,8 +45,8 @@
   async function launch(){
     if(!selectedFile){setStatus("Choose a game file first.","error");return;}
     const id=select.value, system=systems[id];
-    if(id==="3ds" && window.crossOriginIsolated !== true) {
-      setStatus("3DS requires SharedArrayBuffer and cross-origin isolation. The browser worker could not enable this feature; try reloading in a compatible desktop browser.","error");
+    if(id==="3ds" && (window.crossOriginIsolated !== true || typeof SharedArrayBuffer !== "function")) {
+      setStatus("The dedicated 3DS player could not enable SharedArrayBuffer. Check Settings, make sure service workers are allowed, and reload this page once.","error");
       return;
     }
     if(!supported(selectedFile,system)){setStatus("That file extension doesn't match "+system.name+". Choose the correct system or another file.","error");return;}

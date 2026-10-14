@@ -63,25 +63,37 @@
   function gameKey(file, systemId) {
     return systemId + ":" + file.name.toLowerCase() + ":" + file.size + ":" + file.lastModified;
   }
+  function duplicateRecord(primaryKey, systemId, file, dupeKey) {
+    return {
+      key: primaryKey, duplicateKey: dupeKey, systemId, name: file.name,
+      size: file.size, lastModified: file.lastModified,
+      type: file.type || "application/octet-stream", alreadyExists: true
+    };
+  }
   async function save(file, systemId) {
     if (!(file instanceof Blob)) throw new Error("Choose a game file first.");
     const dupeKey = duplicateKey(systemId, file.name, file.size);
+    // Avoid reading a potentially large ROM into memory when it is already saved.
+    const existingKey = await transact("readonly", (store, finish, tx) => {
+      const lookup = store.index("duplicateKey").getKey(dupeKey);
+      lookup.onsuccess = () => finish(lookup.result);
+      lookup.onerror = () => { try { tx.abort(); } catch (_) {} };
+    });
+    if (existingKey !== undefined) return duplicateRecord(existingKey, systemId, file, dupeKey);
+
     const data = await file.arrayBuffer();
     const record = {
       key: gameKey(file, systemId), duplicateKey: dupeKey, systemId, name: file.name,
       size: file.size, lastModified: file.lastModified,
       type: file.type || "application/octet-stream", addedAt: Date.now(), data
     };
+    // Check a second time in the write transaction to avoid duplicate inserts
+    // if the same ROM is added from another tab at the same time.
     return await transact("readwrite", (store, finish, tx) => {
       const lookup = store.index("duplicateKey").getKey(dupeKey);
       lookup.onsuccess = () => {
         if (lookup.result !== undefined) {
-          // Return lightweight metadata only; don't read the existing ROM bytes again.
-          finish({
-            key: lookup.result, duplicateKey: dupeKey, systemId, name: file.name,
-            size: file.size, lastModified: file.lastModified,
-            type: file.type || "application/octet-stream", alreadyExists: true
-          });
+          finish(duplicateRecord(lookup.result, systemId, file, dupeKey));
           return;
         }
         const add = store.add(record);

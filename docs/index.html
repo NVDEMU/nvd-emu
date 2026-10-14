@@ -8,6 +8,7 @@
   <title>nvd-emu</title>
   <link rel="icon" href="./nvd-emu-logo.svg" type="image/svg+xml">
   <link rel="manifest" href="./manifest.webmanifest">
+  <script src="./coi-bootstrap.js"></script>
   <link rel="stylesheet" href="./site.css">
   <style>
     :root {
@@ -209,7 +210,7 @@
                 <span>or browse for a ROM you own</span>
                 <label class="file-label" for="rom-file">Browse files</label>
                 <button id="test-2600" class="subtle" type="button" style="margin-top:8px;font-size:11px">Run built-in Atari 2600 color test · no ROM needed</button>
-                <input id="rom-file" type="file" accept=".a26,.a52,.a78,.atr,.atx,.xfd,.xex,.cas,.car,.lnx,.j64,.jag,.abs,.cof,.bin,.rom,.nes,.fds,.gb,.gbc,.gba,.sfc,.smc,.nds,.sms,.gg,.md,.gen,.n64,.z64,.v64,.chd,.pbp,.iso,.cue,.img,.mdf,.cso,.cdi,.gdi,.32x,.ws,.wsc,.vb,.vboy,.pce,.sgx,.col,.d64,.g64,.d71,.d81,.t64,.tap,.prg,.crt,.ngp,.ngc,.adf,.adz,.dms,.ipf,.lha,.hdf,.uae,.dos,.dsk,.zip">
+                <input id="rom-file" type="file" accept=".a26,.a52,.a78,.atr,.atx,.xfd,.xex,.cas,.car,.lnx,.j64,.jag,.abs,.cof,.bin,.rom,.nes,.fds,.gb,.gbc,.gba,.sfc,.smc,.nds,.sms,.gg,.md,.gen,.n64,.z64,.v64,.chd,.pbp,.iso,.cue,.img,.mdf,.cso,.cdi,.gdi,.32x,.ws,.wsc,.vb,.vboy,.pce,.sgx,.col,.3ds,.cci,.cxi,.cia,.sg,.sc,.sg1,.d64,.g64,.d71,.d81,.t64,.tap,.prg,.crt,.ngp,.ngc,.adf,.adz,.dms,.ipf,.lha,.hdf,.uae,.dos,.dsk,.zip">
               </div>
               <div id="selected-file" class="selected-file hidden"><span>▣</span><span id="file-name" class="name"></span><button id="clear-file" class="subtle" style="padding:5px 8px">×</button></div>
               <button id="play-button" class="primary" disabled style="width:100%;margin-top:14px">Play game</button>
@@ -590,6 +591,10 @@
       setStatus("Choose a game file first.", "error");
       return;
     }
+    if (select.value === "3ds" && window.crossOriginIsolated !== true) {
+      setStatus("The 3DS core needs SharedArrayBuffer. NVD-EMU could not enable cross-origin isolation in this browser, so 3DS cannot start here yet. Try reloading in a supported desktop browser.", "error");
+      return;
+    }
     if (!accepts(selectedFile)) {
       setStatus("The file extension doesn't match the selected system. Choose the correct system or file.", "error");
       return;
@@ -604,15 +609,18 @@
     const frame = $("player-frame");
     frame.classList.remove("hidden");
 
+    const coreCdn = "https://cdn.emulatorjs.org/" + (chosen.coreChannel || "stable") + "/data/";
     const config = {
       core: chosen.coreId || select.value,
+      dataPath: coreCdn,
+      threads: chosen.threads === true || select.value === "3ds",
       romUrl: activeBlobUrl,
       name: selectedFile.name,
       gameID: stableGameID(select.value, selectedFile.name),
       biosUrl: activeBiosBlobUrl || ""
     };
     const safeJson = JSON.stringify(config).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
-    frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;background:#08090b;color:white;height:100%;font-family:system-ui,sans-serif}#game{width:100%;height:100%;min-height:320px}body{overflow:hidden}</style></head><body><div id="game"></div><script>const config=${safeJson};window.EJS_player="#game";window.EJS_core=config.core;window.EJS_gameUrl=config.romUrl;window.EJS_gameName=config.name;window.EJS_pathtodata=${JSON.stringify(coreCdn)};window.EJS_color="#dc292b";window.EJS_startOnLoaded=true;window.EJS_gameID=config.gameID;window.EJS_biosUrl=config.biosUrl||"";window.EJS_volume=0.8;window.EJS_language="en-US";window.EJS_defaultOptions=config.core==="psx"?{"save-state-location":"browser","save-state-slot":0,"pcsx_rearmed_pad1type":"dualshock","pcsx_rearmed_bios":"auto","pcsx_rearmed_analog_combo":"l1+r1+select"}:{"save-state-location":"browser","save-state-slot":0};window.EJS_Buttons={playPause:true,restart:true,mute:true,settings:true,fullscreen:true,saveState:true,loadState:true,gamepad:true,volume:true,saveSavFiles:true,loadSavFiles:true,quickSave:true,quickLoad:true,screenshot:true,cacheManager:true,exitEmulation:true};<\/script><script src="https://cdn.emulatorjs.org/stable/data/loader.js"><\/script></body></html>`;
+    frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;background:#08090b;color:white;height:100%;font-family:system-ui,sans-serif}#game{width:100%;height:100%;min-height:320px}body{overflow:hidden}</style></head><body><div id="game"></div><script>const config=${safeJson};window.EJS_player="#game";window.EJS_core=config.core;window.EJS_gameUrl=config.romUrl;window.EJS_gameName=config.name;window.EJS_pathtodata=config.dataPath;window.EJS_threads=!!config.threads;window.EJS_color="#dc292b";window.EJS_startOnLoaded=true;window.EJS_gameID=config.gameID;window.EJS_biosUrl=config.biosUrl||"";window.EJS_volume=0.8;window.EJS_language="en-US";window.EJS_defaultOptions=config.core==="psx"?{"save-state-location":"browser","save-state-slot":0,"pcsx_rearmed_pad1type":"dualshock","pcsx_rearmed_bios":"auto","pcsx_rearmed_analog_combo":"l1+r1+select"}:{"save-state-location":"browser","save-state-slot":0};window.EJS_Buttons={playPause:true,restart:true,mute:true,settings:true,fullscreen:true,saveState:true,loadState:true,gamepad:true,volume:true,saveSavFiles:true,loadSavFiles:true,quickSave:true,quickLoad:true,screenshot:true,cacheManager:true,exitEmulation:true};<\/script><script crossorigin="anonymous" src="${coreCdn}loader.js"><\/script></body></html>`;
     setStatus("Loading " + chosen.name + " core from EmulatorJS. ROM file remains local.");
     recordEntry(selectedFile, select.value);
     $("player-section").scrollIntoView({behavior:"smooth",block:"start"});
@@ -688,9 +696,7 @@
   window.addEventListener("beforeunload", () => { if (activeBlobUrl) URL.revokeObjectURL(activeBlobUrl); });
 
   // Best-effort shell caching. EmulatorJS cores are fetched online on demand.
-  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
-  }
+  
 })();
 </script>
 </body>

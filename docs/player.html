@@ -32,7 +32,8 @@
   let selectedFile=null, selectedBios=null, gameUrl=null, biosUrl=null;
   for(const [id,system] of Object.entries(systems).sort((a,b)=>a[1].name.localeCompare(b[1].name))){const option=document.createElement("option");option.value=id;option.textContent=system.name;select.append(option);}
   const params=new URLSearchParams(location.search), requestedSystem=params.get("system");
-  if(systems[requestedSystem])select.value=requestedSystem;
+  let preferences={};try{preferences=JSON.parse(localStorage.getItem("nvd-emu-settings-v1")||"{}")||{};}catch(_){}
+  if(systems[requestedSystem])select.value=requestedSystem;else if(systems[preferences.defaultSystem])select.value=preferences.defaultSystem;
   function setStatus(message,kind=""){ $("player-status").textContent=message;$("player-status").className="status "+kind; }
   window.addEventListener("message",event=>{
     if(event.source!==frame.contentWindow||!event.data||event.data.nvdEmu!==true)return;
@@ -61,6 +62,11 @@
   async function launch(){
     if(!selectedFile){setStatus("Choose a game file first.","error");return;}
     const id=select.value, system=systems[id];
+    if(id==="gamecube"){
+      try{const saved=await window.NVDLibrary.save(selectedFile,id);window.location.href="./gamecube-engine/index.html?launch="+encodeURIComponent(saved.key);}
+      catch(error){window.location.href="./gamecube-engine/index.html?storage-error="+encodeURIComponent(error.message||String(error));}
+      return;
+    }
     if(id==="3ds" && (window.crossOriginIsolated !== true || typeof SharedArrayBuffer !== "function")) {
       setStatus("The dedicated 3DS player could not enable SharedArrayBuffer. Check Settings, make sure service workers are allowed, and reload this page once.","error");
       return;

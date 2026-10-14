@@ -313,6 +313,7 @@
   const systems = window.NVD_SYSTEMS;
   const coreCdn = "https://cdn.emulatorjs.org/stable/data/";
   const $ = (id) => document.getElementById(id);
+  function readNVDPreferences(){try{return JSON.parse(localStorage.getItem("nvd-emu-settings-v1")||"{}")||{};}catch(_){return {};}}
   const fileInput = $("rom-file");
   const biosFileInput = $("psx-bios-file");
   const select = $("system");
@@ -325,7 +326,8 @@
   let activeBiosBlobUrl = null;
 
   function renderSystemCatalog() {
-    const previous = select.value || "atari2600";
+    const preferences = readNVDPreferences();
+    const previous = select.value || (systems[preferences.defaultSystem] ? preferences.defaultSystem : "atari2600");
     select.replaceChildren();
     const homeList = $("system-list");
     const compatibilityList = $("compatibility-list");
@@ -363,7 +365,7 @@
     }
     select.value = systems[previous] ? previous : "atari2600";
     $("system-count").textContent = String(Object.keys(systems).length);
-    $("settings-system-count").textContent = Object.keys(systems).length + " configured through EmulatorJS";
+    $("settings-system-count").textContent = Object.keys(systems).length + " configured browser profiles; GameCube uses a dedicated experimental WASM engine";
   }
   let gameEntries = [];
   let launches = 0;
@@ -606,6 +608,16 @@
       });
       return;
     }
+    if (select.value === "gamecube") {
+      if (!accepts(selectedFile)) { setStatus("Choose a GameCube disc image (.iso, .gcm, .rvz, .wbfs or .ciso), or a supported homebrew image.", "error"); return; }
+      setStatus("Preparing the experimental Dolphin WASM player…");
+      window.NVDLibrary.save(selectedFile, "gamecube").then(record => {
+        window.location.href = "./gamecube-engine/index.html?launch=" + encodeURIComponent(record.key);
+      }).catch(error => {
+        window.location.href = "./gamecube-engine/index.html?storage-error=" + encodeURIComponent(error.message || String(error));
+      });
+      return;
+    }
     if (!accepts(selectedFile)) {
       setStatus("The file extension doesn't match the selected system. Choose the correct system or file.", "error");
       return;
@@ -628,10 +640,11 @@
       romUrl: activeBlobUrl,
       name: selectedFile.name,
       gameID: stableGameID(select.value, selectedFile.name),
-      biosUrl: activeBiosBlobUrl || ""
+      biosUrl: activeBiosBlobUrl || "",
+      volume: Math.max(0, Math.min(100, Number(readNVDPreferences().volume ?? 80))) / 100
     };
     const safeJson = JSON.stringify(config).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
-    frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;background:#08090b;color:white;height:100%;font-family:system-ui,sans-serif}#game{width:100%;height:100%;min-height:320px}body{overflow:hidden}</style></head><body><div id="game"></div><script>const config=${safeJson};window.EJS_player="#game";window.EJS_core=config.core;window.EJS_gameUrl=config.romUrl;window.EJS_gameName=config.name;window.EJS_pathtodata=config.dataPath;window.EJS_threads=!!config.threads;window.EJS_color="#dc292b";window.EJS_startOnLoaded=true;window.EJS_gameID=config.gameID;window.EJS_biosUrl=config.biosUrl||"";window.EJS_volume=0.8;window.EJS_language="en-US";window.EJS_defaultOptions=config.core==="psx"?{"save-state-location":"browser","save-state-slot":0,"pcsx_rearmed_pad1type":"dualshock","pcsx_rearmed_bios":"auto","pcsx_rearmed_analog_combo":"l1+r1+select"}:{"save-state-location":"browser","save-state-slot":0};window.EJS_Buttons={playPause:true,restart:true,mute:true,settings:true,fullscreen:true,saveState:true,loadState:true,gamepad:true,volume:true,saveSavFiles:true,loadSavFiles:true,quickSave:true,quickLoad:true,screenshot:true,cacheManager:true,exitEmulation:true};<\/script><script crossorigin="anonymous" src="${coreCdn}loader.js"><\/script></body></html>`;
+    frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;background:#08090b;color:white;height:100%;font-family:system-ui,sans-serif}#game{width:100%;height:100%;min-height:320px}body{overflow:hidden}</style></head><body><div id="game"></div><script>const config=${safeJson};window.EJS_player="#game";window.EJS_core=config.core;window.EJS_gameUrl=config.romUrl;window.EJS_gameName=config.name;window.EJS_pathtodata=config.dataPath;window.EJS_threads=!!config.threads;window.EJS_color="#dc292b";window.EJS_startOnLoaded=true;window.EJS_gameID=config.gameID;window.EJS_biosUrl=config.biosUrl||"";window.EJS_volume=config.volume;window.EJS_language="en-US";window.EJS_defaultOptions=config.core==="psx"?{"save-state-location":"browser","save-state-slot":0,"pcsx_rearmed_pad1type":"dualshock","pcsx_rearmed_bios":"auto","pcsx_rearmed_analog_combo":"l1+r1+select"}:{"save-state-location":"browser","save-state-slot":0};window.EJS_Buttons={playPause:true,restart:true,mute:true,settings:true,fullscreen:true,saveState:true,loadState:true,gamepad:true,volume:true,saveSavFiles:true,loadSavFiles:true,quickSave:true,quickLoad:true,screenshot:true,cacheManager:true,exitEmulation:true};<\/script><script crossorigin="anonymous" src="${coreCdn}loader.js"><\/script></body></html>`;
     setStatus("Loading " + chosen.name + " core from EmulatorJS. ROM file remains local.");
     recordEntry(selectedFile, select.value);
     $("player-section").scrollIntoView({behavior:"smooth",block:"start"});

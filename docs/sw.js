@@ -1,4 +1,4 @@
-const CACHE_NAME = "nvd-emu-web-shell-v14";
+const CACHE_NAME = "nvd-emu-web-shell-v15";
 const APP_FILES = [
   "./", "./index.html", "./library.html", "./systems.html", "./player.html",
   "./settings.html", "./emulator.html", "./site.css", "./systems-data.js", "./artwork.js",
@@ -35,7 +35,12 @@ function addIsolationHeaders(response, request) {
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_FILES.map(path => new URL(path, self.registration.scope).toString())))
+      .then(cache => cache.addAll(APP_FILES.map(path => {
+        const url = new URL(path, self.registration.scope);
+        // Never seed a new shell cache from an older service worker's stale URL keys.
+        url.searchParams.set("__nvd_cache", CACHE_NAME);
+        return url.toString();
+      })))
       .then(() => self.skipWaiting())
   );
 });
@@ -53,11 +58,20 @@ async function offlineResponse(request) {
   if (request.method === "GET" && url.origin === self.location.origin) {
     const cached = await caches.match(request);
     if (cached) return addIsolationHeaders(cached, request);
+    // Install uses versioned URLs to bypass any stale prior shell cache.
+    const freshURL = new URL(request.url);
+    freshURL.searchParams.set("__nvd_cache", CACHE_NAME);
+    const versionedCached = await caches.match(freshURL.toString());
+    if (versionedCached) return addIsolationHeaders(versionedCached, request);
   }
   if (request.mode === "navigate") {
     const appIndex = new URL("./index.html", self.registration.scope).toString();
     const cachedIndex = await caches.match(appIndex);
     if (cachedIndex) return addIsolationHeaders(cachedIndex, request);
+    const freshIndex = new URL(appIndex);
+    freshIndex.searchParams.set("__nvd_cache", CACHE_NAME);
+    const versionedIndex = await caches.match(freshIndex.toString());
+    if (versionedIndex) return addIsolationHeaders(versionedIndex, request);
   }
   return Response.error();
 }

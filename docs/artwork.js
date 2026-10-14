@@ -87,23 +87,25 @@
     const noRegion=base.replace(/\s*\([^)]*\)/g,"").replace(/\s*\[[^\]]*\]/g,"").trim();
     const shortName=base.split(/\s(?:\(|\[)/)[0].trim();
     const regionSuffixes=[" (World)"," (USA)"," (USA, Europe)"," (Europe)"," (Japan)"," (Japan, USA)"," (USA, Europe, Japan)"," (En,Ja)"];
-    const names=[base,clean,noRegion,shortName].filter(Boolean);
-    if(!/\([^)]*\)|\[[^\]]*\]/.test(base)){
-      for(const name of [base,clean])for(const region of regionSuffixes)names.push(name+region);
+    const names=[...new Set([base,clean,noRegion,shortName].filter(Boolean))];
+    const regionSuffixes=[" (World)"," (USA)"," (USA, Europe)"," (Europe)"," (Japan)"," (Japan, USA)"," (USA, Europe, Japan)"," (En,Ja)"];
+    const regionalNames=[];
+    if(!/\\([^)]*\\)|\\[[^\\]]*\\]/.test(base)){
+      for(const name of [...new Set([base,clean])])for(const region of regionSuffixes)regionalNames.push(name+region);
     }
-    const uniqueNames=[...new Set(names.filter(Boolean))];
+    const allBoxNames=[...new Set([...names,...regionalNames])];
     const extension=((entry.name||"").split(".").pop()||"").toLowerCase();
     const playlists=[system.boxartPlaylist];
-    if(system.id==="gb"||system.name==="Game Boy / Game Boy Color")playlists.push(extension==="gbc"?"Nintendo - Game Boy Color":"Nintendo - Game Boy");
-    if(system.id==="ngp"&&extension==="ngc")playlists.unshift("SNK - Neo Geo Pocket Color");
-    if(system.id==="wonderswan"&&extension==="wsc")playlists.unshift("Bandai - WonderSwan Color");
+    if(entry.systemId==="gb"||system.name==="Game Boy / Game Boy Color")playlists.push(extension==="gbc"?"Nintendo - Game Boy Color":"Nintendo - Game Boy");
+    if(entry.systemId==="ngp"&&extension==="ngc")playlists.unshift("SNK - Neo Geo Pocket Color");
+    if(entry.systemId==="wonderswan"&&extension==="wsc")playlists.unshift("Bandai - WonderSwan Color");
     const folders=["Named_Boxarts","Named_Titles","Named_Snaps"];
     const urls=[];
     for(const playlist of [...new Set(playlists.filter(Boolean))]){
-      for(const name of uniqueNames){
-        for(const folder of folders){
-          urls.push("https://thumbnails.libretro.com/"+playlist.split("/").map(encodeURIComponent).join("/")+"/"+folder+"/"+encodeURIComponent(name)+".png");
-        }
+      // Box art gets exact names plus likely region variants; title screens and snaps are a smaller fallback set.
+      for(const name of allBoxNames)urls.push("https://thumbnails.libretro.com/"+playlist.split("/").map(encodeURIComponent).join("/")+"/Named_Boxarts/"+encodeURIComponent(name)+".png");
+      for(const folder of folders.slice(1)){
+        for(const name of names)urls.push("https://thumbnails.libretro.com/"+playlist.split("/").map(encodeURIComponent).join("/")+"/"+folder+"/"+encodeURIComponent(name)+".png");
       }
     }
     return urls;

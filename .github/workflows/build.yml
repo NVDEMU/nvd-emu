@@ -191,7 +191,7 @@ jobs:
         if: github.ref == 'refs/heads/main' && env.MACOS_SIGNING_CONFIGURED != 'true'
         run: |
           gh release delete-asset nightly nvd-emu-macos-arm64.dmg --yes || true
-          gh release delete-asset nightly nvd-emu-macos-arm64.zip --yes
+          gh release delete-asset nightly nvd-emu-macos-arm64.zip --yes || true
 
       - name: Attach notarized Nightly macOS downloads
         if: github.ref == 'refs/heads/main' && env.MACOS_SIGNING_CONFIGURED == 'true'
@@ -224,7 +224,7 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           gh release delete-asset "$RELEASE_TAG" nvd-emu-macos-arm64.dmg --yes || true
-          gh release delete-asset "$RELEASE_TAG" nvd-emu-macos-arm64.zip --yes
+          gh release delete-asset "$RELEASE_TAG" nvd-emu-macos-arm64.zip --yes || true
 
       - name: Attach notarized Stable macOS downloads
         if: startsWith(github.ref, 'refs/tags/v') && env.MACOS_SIGNING_CONFIGURED == 'true'

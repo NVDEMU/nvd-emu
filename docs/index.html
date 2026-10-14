@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101114">
+  <meta name="description" content="nvd-emu Web — a multi-system retro game player for Windows, macOS, and modern browsers.">
+  <title>nvd-emu</title>
+  <link rel="icon" href="./nvd-emu-logo.svg" type="image/svg+xml">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #101114;
+      --panel: #17181d;
+      --panel-2: #1e1f25;
+      --line: #2d2e36;
+      --muted: #a0a1ac;
+      --text: #f5f5f7;
+      --red: #dc292b;
+      --red-2: #ff7376;
+      --green: #8ed7b2;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); }
+    button, input, select { font: inherit; }
+    button, .file-label { border: 1px solid var(--line); border-radius: 9px; color: var(--text); cursor: pointer; padding: 11px 14px; background: var(--panel-2); transition: background .15s, border-color .15s, transform .15s; }
+    button:hover, .file-label:hover { background: #282931; border-color: #4a4b55; }
+    button:active, .file-label:active { transform: translateY(1px); }
+    button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+    button.primary { background: var(--red); border-color: #ed4447; font-weight: 750; }
+    button.primary:hover { background: #ed383b; }
+    button.subtle { background: transparent; }
+    input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+    select { width: 100%; padding: 12px; background: #111216; border: 1px solid #373841; color: var(--text); border-radius: 9px; }
+    :focus-visible { outline: 2px solid var(--red-2); outline-offset: 3px; }
+    .shell { min-height: 100vh; display: grid; grid-template-columns: 224px minmax(0,1fr); gap: 20px; max-width: 1600px; margin: auto; padding: 18px; }
+    aside { background: #15161a; border: 1px solid #292a30; border-radius: 16px; min-height: calc(100vh - 36px); padding: 18px 14px; display: flex; flex-direction: column; gap: 12px; }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 3px 4px 18px; }
+    .brand img { width: 44px; height: 44px; border-radius: 9px; }
+    .brand strong { display:block; font-size: 18px; letter-spacing: -.5px; }
+    .eyebrow { color: #8c8e99; font-size: 10px; font-weight: 800; letter-spacing: 1.3px; }
+    .nav { width: 100%; text-align: left; background: transparent; border-color: transparent; }
+    .nav.active { color: #ff898b; background: #342023; border-color: #5a2b30; font-weight: 700; }
+    .side-note { margin-top: auto; color: #9c9da7; background: #1b1c21; border: 1px solid #2a2b31; border-radius: 11px; padding: 12px; font-size: 12px; line-height: 1.5; }
+    main { min-width: 0; padding: 8px 4px 24px 0; }
+    .topline { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 8px 0 20px; }
+    h1 { font-size: clamp(27px,3vw,38px); line-height: 1.1; margin: 0 0 9px; letter-spacing: -1px; }
+    h2 { margin: 0; font-size: 17px; }
+    p { color: var(--muted); line-height: 1.55; }
+    .muted { color: var(--muted); }
+    .pill { display: inline-flex; align-items:center; gap: 7px; border-radius: 999px; border: 1px solid #3b3c44; background:#1b1c21; padding: 7px 10px; font-size: 11px; font-weight: 750; color: #c5c6ce; white-space: nowrap; }
+    .dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; display: inline-block; }
+    .hero { position: relative; overflow: hidden; padding: clamp(22px,4vw,36px); border: 1px solid #34282b; border-radius: 16px; background: radial-gradient(ellipse at 90% -10%, rgba(220,41,43,.19), transparent 48%), linear-gradient(135deg,#1a171a,#17181d 60%); }
+    .hero:after { content:"N"; position:absolute; right:20px; bottom:-68px; font-weight:950; font-size: clamp(150px,24vw,300px); line-height:1; color:rgba(220,41,43,.07); pointer-events:none; }
+    .hero p { max-width: 620px; margin: 0 0 20px; }
+    .hero-actions { display:flex; gap:10px; flex-wrap:wrap; position:relative; z-index:1; }
+    .metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:16px 0; }
+    .metric { border:1px solid var(--line); background:var(--panel); border-radius:12px; padding:15px 16px; min-width:0; }
+    .metric .label { color:var(--muted); font-size:10px; font-weight:800; letter-spacing:1px; }
+    .metric .value { font-size:25px; font-weight:800; margin-top:8px; }
+    .grid { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr); gap:16px; align-items:start; margin-top:16px; }
+    .card { border:1px solid var(--line); border-radius:14px; background:var(--panel); overflow:hidden; min-width:0; }
+    .card-head { padding:17px 18px; display:flex; justify-content:space-between; align-items:center; gap:12px; border-bottom:1px solid #282930; }
+    .card-body { padding:18px; }
+    .system-card { display:flex; gap:12px; align-items:center; border:1px solid #303139; border-radius:11px; padding:13px; margin-bottom:10px; background:#191a1f; }
+    .system-icon { display:grid; place-items:center; width:42px; height:42px; flex:0 0 42px; border-radius:10px; background:#342023; color:#ff8587; font-weight:900; font-size:13px; }
+    .system-card strong { display:block; margin-bottom:4px; }
+    .system-card small { display:block; color:var(--muted); font-size:11px; line-height:1.4; }
+    .system-card button { margin-left:auto; padding:8px 10px; font-size:12px; }
+    .field { margin-bottom:14px; }
+    .field label.title { display:block; font-size:12px; font-weight:750; margin:0 0 8px; }
+    .drop { display:flex; flex-direction:column; align-items:center; text-align:center; justify-content:center; gap:8px; padding:24px 14px; background:#111216; border:1px dashed #484951; border-radius:12px; min-height:154px; }
+    .drop.dragging { border-color:var(--red-2); background:#26191c; }
+    .drop .upload { font-size:28px; }
+    .drop strong { font-size:13px; }
+    .drop span { color:var(--muted); font-size:11px; }
+    .drop .file-label { margin-top:4px; background:#25262d; }
+    .selected-file { display:flex; gap:8px; align-items:center; padding:10px; background:#1b1c21; border-radius:8px; margin-top:10px; min-width:0; }
+    .selected-file .name { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; font-size:12px; }
+    .player-card { margin-top:16px; }
+    .player-frame { width:100%; height:min(70vh,620px); min-height:380px; display:block; border:0; background:#08090b; }
+    .player-placeholder { display:grid; place-items:center; text-align:center; min-height:300px; padding:28px; background:radial-gradient(ellipse at 50% 100%,rgba(220,41,43,.09),transparent 58%),#0b0c0f; }
+    .console { display:flex; flex-direction:column; align-items:center; gap:14px; }
+    .console-screen { width:min(390px,90%); aspect-ratio: 4/3; background:#070809; border:1px solid #373840; border-radius:14px; box-shadow:inset 0 0 0 9px #17181d, 0 18px 50px rgba(0,0,0,.3); display:grid; place-items:center; color:#555762; font:800 12px ui-monospace,monospace; letter-spacing:2px; }
+    .status { padding:12px 16px; border-top:1px solid #292a30; color:#babcc5; font-size:12px; display:flex; align-items:center; gap:9px; }
+    .status.error { color:#ff9a9d; }
+    .status.ok { color:#9ddfba; }
+    .settings-line { display:flex; justify-content:space-between; align-items:center; gap:20px; padding:13px 0; border-bottom:1px solid #292a30; }
+    .settings-line:last-child { border:0; }
+    .settings-line span { color:var(--muted); font-size:12px; }
+    .settings-line strong { font-size:12px; text-align:right; }
+    .hidden { display:none !important; }
+    footer { margin-top:16px; padding:0 4px; color:#777984; font-size:11px; line-height:1.6; }
+    footer a { color:#c7c8d0; }
+    @media(max-width:1050px) { .shell { grid-template-columns:190px minmax(0,1fr); gap:14px; } .grid { grid-template-columns:1fr; } }
+    @media(max-width:700px) {
+      .shell { display:block; padding:10px; }
+      aside { min-height:0; padding:10px; flex-direction:row; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
+      .brand { padding:0 6px 0 2px; margin-right:auto; }
+      .brand img { width:36px;height:36px; }
+      .brand strong { font-size:16px; }
+      .brand .eyebrow { display:none; }
+      .nav { width:auto; padding:9px 10px; font-size:12px; }
+      .side-note { display:none; }
+      main { padding:0; }
+      .topline { margin-top:14px; }
+      .metrics { gap:7px; }
+      .metric { padding:12px 10px; }
+      .metric .value { font-size:21px; }
+      .metric .label { font-size:9px; }
+      .player-frame { min-height:300px; height:60vh; }
+      .card-head,.card-body { padding:14px; }
+      .pill { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside>
+      <div class="brand">
+        <img src="./nvd-emu-logo.svg" alt="nvd-emu logo">
+        <div><strong>nvd-emu</strong><span class="eyebrow">MULTI-SYSTEM EMULATOR</span></div>
+      </div>
+      <div class="eyebrow" style="padding:12px 9px 0">WORKSPACE</div>
+      <button class="nav active" data-view="overview">▦ &nbsp; Overview</button>
+      <button class="nav" data-view="library">▤ &nbsp; Game library</button>
+      <button class="nav" data-view="systems">◈ &nbsp; Systems</button>
+      <button class="nav" data-view="settings">⚙ &nbsp; About &amp; settings</button>
+      <div class="side-note"><strong style="color:#f1f1f3">Runs in your browser</strong><br>Nothing to install and no Terminal needed. Your selected game file stays on your device.</div>
+    </aside>
+
+    <main>
+      <div class="topline">
+        <div>
+          <div class="eyebrow" style="margin-bottom:9px">NVD-EMU WEB / PREVIEW</div>
+          <h1 id="page-title">Your game room.</h1>
+          <p style="margin:0">A multi-system retro player for Mac and Windows.</p>
+        </div>
+        <span class="pill"><span class="dot"></span> BROWSER EDITION</span>
+      </div>
+
+      <section id="view-overview">
+        <div class="hero">
+          <div class="eyebrow" style="color:#ff8587;margin-bottom:12px">RETRO GAMING, REIMAGINED</div>
+          <h1 style="font-size:clamp(25px,3.4vw,42px);max-width:660px">One library. Multiple systems. Your games.</h1>
+          <p>Start with the Atari 2600, then explore more classic systems. Load a game file you already have, press play, and keep playing right here.</p>
+          <div class="hero-actions">
+            <button class="primary" id="hero-load">＋ &nbsp; Load a game</button>
+            <button id="hero-systems">Explore systems</button>
+          </div>
+        </div>
+
+        <div class="metrics">
+          <div class="metric"><div class="label">SYSTEMS CONFIGURED</div><div class="value">7</div></div>
+          <div class="metric"><div class="label">GAMES IN THIS SESSION</div><div class="value" id="game-count">0</div></div>
+          <div class="metric"><div class="label">ROM UPLOADS</div><div class="value">0</div><div class="muted" style="font-size:10px;margin-top:4px">Files stay local</div></div>
+        </div>
+
+        <div class="grid">
+          <section class="card">
+            <div class="card-head"><h2>Start playing</h2><span class="eyebrow">YOUR LIBRARY</span></div>
+            <div class="card-body">
+              <div class="field">
+                <label class="title" for="system">Choose a system</label>
+                <select id="system">
+                  <option value="atari2600">Atari 2600</option>
+                  <option value="nes">Nintendo Entertainment System</option>
+                  <option value="gb">Game Boy / Game Boy Color</option>
+                  <option value="gba">Game Boy Advance</option>
+                  <option value="snes">Super Nintendo</option>
+                  <option value="segaMS">Sega Master System</option>
+                  <option value="segaMD">Sega Mega Drive / Genesis</option>
+                </select>
+              </div>
+              <div class="drop" id="drop-zone">
+                <div class="upload">↥</div>
+                <strong>Drop your game file here</strong>
+                <span>or browse for a ROM you own</span>
+                <label class="file-label" for="rom-file">Browse files</label>
+                <input id="rom-file" type="file" accept=".a26,.bin,.rom,.nes,.gb,.gbc,.gba,.sfc,.smc,.sms,.md,.gen,.zip">
+              </div>
+              <div id="selected-file" class="selected-file hidden"><span>▣</span><span id="file-name" class="name"></span><button id="clear-file" class="subtle" style="padding:5px 8px">×</button></div>
+              <button id="play-button" class="primary" disabled style="width:100%;margin-top:14px">Play game</button>
+              <p style="font-size:11px;margin:12px 0 0">nvd-emu doesn't include copyrighted games or BIOS files. Only select ROMs you are legally entitled to use. The emulator engine is loaded from the EmulatorJS CDN when you start a game.</p>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-head"><h2>Available systems</h2><button class="subtle" id="view-all-systems" style="padding:7px 9px;font-size:11px">View all</button></div>
+            <div class="card-body" id="system-list">
+              <div class="system-card"><div class="system-icon">2600</div><div><strong>Atari 2600</strong><small>Stella 2014 core · .a26 / .bin</small></div><button data-pick="atari2600">Select</button></div>
+              <div class="system-card"><div class="system-icon">NES</div><div><strong>Nintendo Entertainment System</strong><small>FCEUmm core · .nes</small></div><button data-pick="nes">Select</button></div>
+              <div class="system-card"><div class="system-icon">GB</div><div><strong>Game Boy / Color</strong><small>Gambatte core · .gb / .gbc</small><button data-pick="gb">Select</button></div></div>
+              <div class="system-card"><div class="system-icon">GBA</div><div><strong>Game Boy Advance</strong><small>mGBA core · .gba</small><button data-pick="gba">Select</button></div></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="view-library" class="hidden">
+        <section class="card">
+          <div class="card-head"><h2>Game library</h2><button class="primary" id="library-load">＋ Add game</button></div>
+          <div class="card-body">
+            <p style="margin-top:0">This web preview keeps the library in the current browser session. Pick your ROM files from your Mac or PC; they are not uploaded to nvd-emu.</p>
+            <div id="empty-library" class="drop"><div class="upload">▤</div><strong>Your library is empty</strong><span>Choose a system and load your first game.</span><button id="empty-load">Load a game</button></div>
+            <div id="library-entries"></div>
+          </div>
+        </section>
+      </section>
+
+      <section id="view-systems" class="hidden">
+        <section class="card">
+          <div class="card-head"><h2>System compatibility</h2><span class="eyebrow">WEB PREVIEW</span></div>
+          <div class="card-body">
+            <p>These systems are wired to EmulatorJS cores. Actual game compatibility varies by ROM, mapper, browser, and core version; nvd-emu hasn't run a full compatibility test suite yet.</p>
+            <div class="system-card"><div class="system-icon">2600</div><div><strong>Atari 2600</strong><small>Stella 2014 · local .a26, .bin and .rom files</small></div><button data-pick="atari2600">Try</button></div>
+            <div class="system-card"><div class="system-icon">NES</div><div><strong>Nintendo Entertainment System</strong><small>FCEUmm · .nes files</small></div><button data-pick="nes">Try</button></div>
+            <div class="system-card"><div class="system-icon">GB</div><div><strong>Game Boy / Game Boy Color</strong><small>Gambatte · .gb and .gbc files</small></div><button data-pick="gb">Try</button></div>
+            <div class="system-card"><div class="system-icon">GBA</div><div><strong>Game Boy Advance</strong><small>mGBA · .gba files</small><button data-pick="gba">Try</button></div></div>
+            <div class="system-card"><div class="system-icon">SNES</div><div><strong>Super Nintendo</strong><small>Snes9x · .sfc and .smc files</small><button data-pick="snes">Try</button></div></div>
+            <div class="system-card"><div class="system-icon">SMS</div><div><strong>Sega Master System</strong><small>SMS Plus · .sms files</small><button data-pick="segaMS">Try</button></div></div>
+            <div class="system-card"><div class="system-icon">MD</div><div><strong>Sega Mega Drive / Genesis</strong><small>Genesis Plus GX · .md, .gen and .bin files</small><button data-pick="segaMD">Try</button></div></div>
+          </div>
+        </section>
+      </section>
+
+      <section id="view-settings" class="hidden">
+        <section class="card">
+          <div class="card-head"><h2>About nvd-emu Web</h2></div>
+          <div class="card-body">
+            <div class="settings-line"><span>Version</span><strong>Web Preview 0.1</strong></div>
+            <div class="settings-line"><span>Platforms</span><strong>macOS · Windows · modern browsers</strong></div>
+            <div class="settings-line"><span>Emulation engine</span><strong>EmulatorJS / libretro cores</strong></div>
+            <div class="settings-line"><span>Save states</span><strong>Provided by the selected core when supported</strong></div>
+            <div class="settings-line"><span>Privacy</span><strong>ROM file is not uploaded by this page</strong></div>
+            <p>The emulator core files are fetched from <a href="https://cdn.emulatorjs.org/stable/data/" target="_blank" rel="noreferrer" style="color:#ff8587">EmulatorJS's stable CDN</a> when you launch a game. This means the browser edition needs an internet connection for the core download.</p>
+            <p>EmulatorJS is GPL-3.0 licensed and the Atari 2600 Stella 2014 core is GPLv2. This site uses the published hosted engine and does not bundle its emulator core assets. Please consult the respective upstream projects for full license terms.</p>
+            <p>Use your own lawfully obtained ROM files. Game ROMs are not included.</p>
+          </div>
+        </section>
+      </section>
+
+      <section id="player-section" class="card player-card hidden">
+        <div class="card-head"><div><h2 id="player-title">Now playing</h2><div class="muted" id="player-meta" style="font-size:11px;margin-top:5px"></div></div><button id="stop-button" class="subtle">Stop game</button></div>
+        <div id="player-stage">
+          <div class="player-placeholder" id="player-placeholder"><div class="console"><div class="console-screen">INSERT CARTRIDGE</div><p style="margin:0">Choose a local ROM file to start emulation.</p></div></div>
+          <iframe id="player-frame" class="player-frame hidden" title="nvd-emu game player" allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe>
+        </div>
+        <div class="status" id="player-status"><span class="dot" style="background:#9799a4"></span><span id="status-text">Ready for a game file. No ROMs have been loaded.</span></div>
+      </section>
+
+      <footer>
+        <strong style="color:#c6c7ce">nvd-emu</strong> · An early cross-platform emulator project. The browser edition bypasses macOS app-install security prompts; it is a web app, not the Qt desktop build. <a href="https://github.com/NVDEMU/nvd-emu">Source on GitHub</a> · <a href="https://emulatorjs.org/docs/">EmulatorJS documentation</a>
+      </footer>
+    </main>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+  const systems = {
+    atari2600: {name:"Atari 2600", extensions:["a26","bin","rom","zip"], core:"Stella 2014"},
+    nes: {name:"Nintendo Entertainment System", extensions:["nes","zip"], core:"FCEUmm"},
+    gb: {name:"Game Boy / Game Boy Color", extensions:["gb","gbc","zip"], core:"Gambatte"},
+    gba: {name:"Game Boy Advance", extensions:["gba","zip"], core:"mGBA"},
+    snes: {name:"Super Nintendo", extensions:["sfc","smc","zip"], core:"Snes9x"},
+    segaMS: {name:"Sega Master System", extensions:["sms","zip"], core:"SMS Plus"},
+    segaMD: {name:"Sega Mega Drive / Genesis", extensions:["md","gen","bin","zip"], core:"Genesis Plus GX"}
+  };
+  const coreCdn = "https://cdn.emulatorjs.org/stable/data/";
+  const $ = (id) => document.getElementById(id);
+  const fileInput = $("rom-file");
+  const select = $("system");
+  const playButton = $("play-button");
+  const dropZone = $("drop-zone");
+  const selectedFileBox = $("selected-file");
+  let selectedFile = null;
+  let activeBlobUrl = null;
+  let gameEntries = [];
+  let launches = 0;
+
+  function setStatus(message, kind = "") {
+    $("status-text").textContent = message;
+    $("player-status").className = "status" + (kind ? " " + kind : "");
+  }
+  function extFor(file) {
+    const name = (file && file.name || "").toLowerCase();
+    const dot = name.lastIndexOf(".");
+    return dot >= 0 ? name.slice(dot + 1) : "";
+  }
+  function accepts(file) {
+    if (!file) return false;
+    const system = systems[select.value];
+    return system.extensions.includes(extFor(file));
+  }
+  function setSelectedFile(file) {
+    selectedFile = file || null;
+    selectedFileBox.classList.toggle("hidden", !selectedFile);
+    $("file-name").textContent = selectedFile ? selectedFile.name : "";
+    playButton.disabled = !selectedFile;
+    if (selectedFile) {
+      const system = systems[select.value];
+      if (!accepts(selectedFile)) {
+        setStatus("That file extension doesn't match " + system.name + ". Change system or choose a matching file.", "error");
+      } else {
+        setStatus("Ready to load " + selectedFile.name + ". The file stays on this device.");
+      }
+      $("player-title").textContent = selectedFile.name;
+      $("player-meta").textContent = system.name + " · " + system.core + " core";
+    }
+  }
+  function chooseSystem(id) {
+    if (!systems[id]) return;
+    select.value = id;
+    if (selectedFile) setSelectedFile(selectedFile);
+    $("view-overview").classList.remove("hidden");
+    setView("overview");
+    document.querySelectorAll("[data-pick]").forEach(button => {
+      button.closest(".system-card")?.classList.toggle("selected", button.dataset.pick === id);
+    });
+    if (selectedFile) $("player-section").scrollIntoView({behavior:"smooth",block:"nearest"});
+  }
+  function setView(view) {
+    const titles = {
+      overview:"Your game room.",
+      library:"Your game library.",
+      systems:"Explore systems.",
+      settings:"Project details."
+    };
+    ["overview","library","systems","settings"].forEach(name => {
+      $("view-" + name).classList.toggle("hidden", name !== view);
+    });
+    document.querySelectorAll("[data-view]").forEach(button => button.classList.toggle("active", button.dataset.view === view));
+    $("page-title").textContent = titles[view] || titles.overview;
+  }
+  function recordEntry(file, systemId) {
+    const exists = gameEntries.some(entry => entry.file === file);
+    if (!exists) gameEntries.unshift({file, systemId, id: ++launches});
+    $("game-count").textContent = String(gameEntries.length);
+    renderLibrary();
+  }
+  function renderLibrary() {
+    const container = $("library-entries");
+    container.replaceChildren();
+    $("empty-library").classList.toggle("hidden", gameEntries.length > 0);
+    for (const entry of gameEntries) {
+      const row = document.createElement("div");
+      row.className = "system-card";
+      const icon = document.createElement("div");
+      icon.className = "system-icon";
+      icon.textContent = entry.file.name.split(".").pop().toUpperCase().slice(0,4);
+      const detail = document.createElement("div");
+      detail.style.minWidth = "0";
+      const title = document.createElement("strong");
+      title.textContent = entry.file.name;
+      const subtitle = document.createElement("small");
+      subtitle.textContent = systems[entry.systemId].name;
+      detail.append(title, subtitle);
+      const play = document.createElement("button");
+      play.textContent = "Play";
+      play.addEventListener("click", () => {
+        chooseSystem(entry.systemId);
+        setSelectedFile(entry.file);
+        launchGame();
+      });
+      row.append(icon, detail, play);
+      container.append(row);
+    }
+  }
+  function stopGame(message = "Game stopped.") {
+    $("player-frame").srcdoc = "";
+    $("player-frame").classList.add("hidden");
+    $("player-placeholder").classList.remove("hidden");
+    $("player-section").classList.remove("hidden");
+    if (activeBlobUrl) {
+      URL.revokeObjectURL(activeBlobUrl);
+      activeBlobUrl = null;
+    }
+    setStatus(message);
+  }
+  function launchGame() {
+    if (!selectedFile) {
+      setStatus("Choose a game file first.", "error");
+      return;
+    }
+    if (!accepts(selectedFile)) {
+      setStatus("The file extension doesn't match the selected system. Choose the correct system or file.", "error");
+      return;
+    }
+    stopGame("Starting emulator engine…");
+    const chosen = systems[select.value];
+    activeBlobUrl = URL.createObjectURL(selectedFile);
+    $("player-title").textContent = selectedFile.name;
+    $("player-meta").textContent = chosen.name + " · " + chosen.core + " core";
+    $("player-placeholder").classList.add("hidden");
+    const frame = $("player-frame");
+    frame.classList.remove("hidden");
+
+    const config = {
+      core: select.value,
+      romUrl: activeBlobUrl,
+      name: selectedFile.name
+    };
+    const safeJson = JSON.stringify(config).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+    frame.srcdoc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;background:#08090b;color:white;height:100%;font-family:system-ui,sans-serif}#game{width:100%;height:100%;min-height:320px}body{overflow:hidden}</style></head><body><div id="game"></div><script>const config=${safeJson};window.EJS_player="#game";window.EJS_core=config.core;window.EJS_gameUrl=config.romUrl;window.EJS_gameName=config.name;window.EJS_pathtodata=${JSON.stringify(coreCdn)};window.EJS_color="#dc292b";window.EJS_startOnLoaded=true;window.EJS_volume=0.8;window.EJS_language="en-US";<\/script><script src="https://cdn.emulatorjs.org/stable/data/loader.js"><\/script></body></html>`;
+    setStatus("Loading " + chosen.name + " core from EmulatorJS. ROM file remains local.");
+    recordEntry(selectedFile, select.value);
+    $("player-section").scrollIntoView({behavior:"smooth",block:"start"});
+    setTimeout(() => {
+      if (!frame.classList.contains("hidden")) setStatus("If the core doesn't start, check your internet connection and verify that the ROM matches the selected system.");
+    }, 10000);
+  }
+
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files && fileInput.files[0];
+    setSelectedFile(file || null);
+  });
+  select.addEventListener("change", () => {
+    if (selectedFile) setSelectedFile(selectedFile);
+  });
+  playButton.addEventListener("click", launchGame);
+  $("clear-file").addEventListener("click", () => { fileInput.value = ""; setSelectedFile(null); });
+  $("stop-button").addEventListener("click", () => stopGame());
+  $("hero-load").addEventListener("click", () => fileInput.click());
+  $("library-load").addEventListener("click", () => fileInput.click());
+  $("empty-load").addEventListener("click", () => fileInput.click());
+  $("hero-systems").addEventListener("click", () => setView("systems"));
+  $("view-all-systems").addEventListener("click", () => setView("systems"));
+  document.querySelectorAll("[data-view]").forEach(button => button.addEventListener("click", () => setView(button.dataset.view)));
+  document.querySelectorAll("[data-pick]").forEach(button => button.addEventListener("click", () => { chooseSystem(button.dataset.pick); fileInput.click(); }));
+
+  dropZone.addEventListener("dragover", event => { event.preventDefault(); dropZone.classList.add("dragging"); });
+  dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragging"));
+  dropZone.addEventListener("drop", event => {
+    event.preventDefault();
+    dropZone.classList.remove("dragging");
+    const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+    if (file) setSelectedFile(file);
+  });
+  window.addEventListener("beforeunload", () => { if (activeBlobUrl) URL.revokeObjectURL(activeBlobUrl); });
+
+  // Best-effort shell caching. EmulatorJS cores are fetched online on demand.
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+  }
+})();
+</script>
+</body>
+</html>

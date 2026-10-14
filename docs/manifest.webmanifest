@@ -1,0 +1,18 @@
+{
+  "name": "nvd-emu",
+  "short_name": "nvd-emu",
+  "description": "A multi-system retro game player for modern browsers.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#101114",
+  "theme_color": "#101114",
+  "icons": [
+    {
+      "src": "./nvd-emu-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -38,7 +38,7 @@ jobs:
 
           html = Path("docs/index.html").read_text(encoding="utf-8")
           manifest = json.loads(Path("docs/manifest.webmanifest").read_text(encoding="utf-8"))
-          scripts = re.findall(r"<script(?:\\s[^>]*)?>([\\s\\S]*?)</script>", html)
+          scripts = re.findall(r"<script(?:\s[^>]*)?>([\s\S]*?)</script>", html)
           if len(scripts) != 1:
               raise SystemExit(f"Expected exactly one inline page script, found {len(scripts)}")
           if manifest.get("name") != "nvd-emu" or manifest.get("start_url") != "./":

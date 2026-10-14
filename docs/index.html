@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#101114">
-  <meta name="description" content="nvd-emu Web — a multi-system retro game player for Windows, macOS, and modern browsers.">
+  <meta name="description" content="nvd-emu Web — a browser-first multi-system retro game frontend.">
   <title>nvd-emu</title>
   <link rel="icon" href="./nvd-emu-logo.svg" type="image/svg+xml">
   <link rel="manifest" href="./manifest.webmanifest">
@@ -68,8 +68,8 @@
     .system-card { display:flex; gap:12px; align-items:center; border:1px solid #303139; border-radius:11px; padding:13px; margin-bottom:10px; background:#191a1f; }
     .system-icon { display:grid; place-items:center; width:42px; height:42px; flex:0 0 42px; border-radius:10px; background:#342023; color:#ff8587; font-weight:900; font-size:13px; }
     .system-card .system-art { width:54px;height:48px;flex:0 0 54px;display:grid;place-items:center;border-radius:10px;background:linear-gradient(145deg,#292b35,#17181d);border:1px solid #41434e;font-size:25px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.025); }\n    .system-card .system-art.atari { color:#ffb36b;background:linear-gradient(145deg,#35271c,#1c1714); }\n    .system-card .system-art.nintendo { color:#ff777b;background:linear-gradient(145deg,#342023,#1b171b); }\n    .system-card .system-art.playstation { color:#9baeff;background:linear-gradient(145deg,#202a45,#171923); }\n    .system-card .system-art.sega { color:#8fcaff;background:linear-gradient(145deg,#1c2d44,#171923); }\n    .system-card .system-art.arcade { color:#e5a2ff;background:linear-gradient(145deg,#30203b,#171923); }\n    .system-card .system-art.other { color:#8fe1ca; }
-    .system-card .system-art img { width:100%;height:100%;padding:8px;object-fit:contain; }
-    .logo-fallback { display:none;width:100%;height:100%;place-items:center;text-align:center;font-size:10px;font-weight:900;line-height:1.1;padding:3px; }
+    .system-card .system-art { position:relative; } .system-card .system-art img { position:absolute;inset:0;width:100%;height:100%;padding:7px;object-fit:contain; }
+    .logo-fallback { display:none;position:absolute;inset:0;width:100%;height:100%;place-items:center;text-align:center;font-size:10px;font-weight:900;line-height:1.1;padding:3px; }
     .game-art { display:grid;place-items:center;position:relative;overflow:hidden;width:58px;height:72px;flex:0 0 58px;border:1px solid #343640;border-radius:7px;background:linear-gradient(145deg,#272932,#101115); }
     .game-art img { width:100%;height:100%;object-fit:contain; }
     .cover-fallback { display:none;position:absolute;inset:0;place-items:center;text-align:center;padding:5px;font-weight:850;font-size:9px;color:#f3f4f8; }
@@ -166,7 +166,7 @@
         <div>
           <div class="eyebrow" style="margin-bottom:9px">NVD-EMU WEB / PREVIEW</div>
           <h1 id="page-title">Your game room.</h1>
-          <p style="margin:0">A multi-system retro player for Mac and Windows.</p>
+          <p style="margin:0">A browser-first retro player for desktop and mobile.</p>
         </div>
         <span class="pill"><span class="dot"></span> BROWSER EDITION</span>
       </div>
@@ -330,7 +330,7 @@
     const compatibilityList = $("compatibility-list");
     homeList.replaceChildren();
     compatibilityList.replaceChildren();
-    for (const [id, system] of Object.entries(systems)) {
+    for (const [id, system] of Object.entries(systems).sort((a,b) => a[1].name.localeCompare(b[1].name))) {
       const option = document.createElement("option");
       option.value = id;
       option.textContent = system.name;
@@ -483,7 +483,7 @@
       const fallback=document.createElement("span");fallback.className="cover-fallback";fallback.textContent=system.badge||system.name;
       art.append(cover,fallback);window.NVD_ARTWORK.setBoxArt(cover,entry,system);
       const detail=document.createElement("div");detail.style.minWidth="0";detail.style.flex="1";
-      const title=document.createElement("strong");title.textContent=entry.name;
+      const title=document.createElement("strong");title.textContent=window.NVD_ARTWORK.displayGameName(entry.name);
       const subtitle=document.createElement("small");subtitle.textContent=system.name+" · "+formatBytes(entry.size||0);
       detail.append(title,subtitle);
       const play=document.createElement("button");play.textContent="▶ Play";play.addEventListener("click",()=>{chooseSystem(entry.systemId);setSelectedFile(entry.file);launchGame();});

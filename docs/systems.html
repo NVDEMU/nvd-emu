@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101114"><meta name="description" content="Browse the systems supported by the NVD-EMU browser frontend."><title>Systems · nvd-emu</title><link rel="icon" href="./nvd-emu-logo.svg" type="image/svg+xml"><link rel="manifest" href="./manifest.webmanifest"><link rel="stylesheet" href="./site.css"></head><body><div class="shell"><aside>
+  <div class="brand"><img src="./nvd-emu-logo.svg" alt="nvd-emu logo"><div><strong>nvd-emu</strong><span class="eyebrow">MULTI-SYSTEM EMULATOR</span></div></div>
+  <div class="eyebrow" style="padding:12px 9px 0">WORKSPACE</div>
+  <a class="nav " href="./index.html">▦ &nbsp; Overview</a>
+  <a class="nav " href="./library.html">▤ &nbsp; Game library</a>
+  <a class="nav active" href="./systems.html">◈ &nbsp; Systems</a>
+  <a class="nav " href="./player.html">▶ &nbsp; Player</a>
+  <a class="nav " href="./settings.html">⚙ &nbsp; Settings</a>
+  <div class="side-note"><strong style="color:#f1f1f3">Browser-first retro gaming</strong><br>ROMs stay in this browser profile. EmulatorJS cores load online when you start a game.</div>
+</aside><main>
+  <header class="topline"><div><div class="eyebrow">NVD-EMU WEB / SYSTEMS</div><h1>Pick your console.</h1><p style="margin:0">34 configured systems across consoles, handhelds, arcade and home computers.</p></div><span class="pill"><span class="dot"></span> EMULATORJS</span></header>
+  <div class="page-toolbar"><input id="system-search" class="page-search" type="search" placeholder="Search systems, brands, file extensions…"><span class="pill" id="system-count">34 systems</span></div>
+  <div class="system-grid" id="systems-grid"></div>
+  <section class="card" style="margin-top:18px"><div class="card-head"><h2>Research targets · not playable yet</h2><span class="pill">NOT INTEGRATED</span></div><div class="card-body">
+    <div class="system-grid">
+      <article class="system-tile"><div class="system-logo"><span class="logo-fallback" style="display:grid">GAMECUBE</span></div><h3>Nintendo GameCube</h3><p>Browser/WASM research only. Retail-disc loading, graphics, audio, controller mapping and save handling still need integration and validation.</p><a class="button" href="https://gecko.layle.dev/" target="_blank" rel="noreferrer">Explore candidate</a></article>
+      <article class="system-tile"><div class="system-logo"><span class="logo-fallback" style="display:grid">Wii</span></div><h3>Nintendo Wii</h3><p>Browser/WASM research only. A complete Wii runtime with motion controls is not integrated into NVD-EMU.</p><a class="button" href="https://github.com/Torashi1069/emu.n" target="_blank" rel="noreferrer">Explore research</a></article>
+      <article class="system-tile"><div class="system-logo"><span class="logo-fallback" style="display:grid">PS2</span></div><h3>PlayStation 2</h3><p>Not supported in the current browser build. A real WebAssembly core and compatibility testing would be required.</p></article>
+    </div>
+  </div></section>
+  <div class="footer">Core names are configuration targets, not a promise that every game boots. Some systems and games require files you supply, and the browser core downloads when you start a game.</div>
+</main></div>
+<script src="./systems-data.js"></script><script src="./artwork.js"></script>
+<script>
+(() => {
+  const grid=document.getElementById("systems-grid"),search=document.getElementById("system-search"),count=document.getElementById("system-count");
+  const entries=Object.entries(window.NVD_SYSTEMS).sort((a,b)=>a[1].name.localeCompare(b[1].name));
+  function render(){
+    const query=search.value.trim().toLowerCase();grid.replaceChildren();let shown=0;
+    for(const [id,system] of entries){
+      const exts=system.extensions.map(ext=>"."+ext).join(" ");
+      if(query && !(system.name+" "+system.core+" "+exts+" "+id).toLowerCase().includes(query))continue;
+      shown++;
+      const card=document.createElement("article");card.className="system-tile";
+      const logoBox=document.createElement("div");logoBox.className="system-logo";
+      const fallback=document.createElement("span");fallback.className="logo-fallback";fallback.textContent=system.badge||system.name;
+      const logo=document.createElement("img");logoBox.append(fallback,logo);window.NVD_ARTWORK.setSystemLogo(logo,system);
+      const title=document.createElement("h3");title.textContent=system.name;
+      const core=document.createElement("p");core.textContent=system.core+" core target";
+      const extensions=document.createElement("div");extensions.className="extension-list";extensions.textContent=exts;
+      const link=document.createElement("a");link.className="button primary";link.href="./player.html?system="+encodeURIComponent(id);link.textContent="Load a game";
+      card.append(logoBox,title,core,extensions);
+      if(system.note){const note=document.createElement("p");note.textContent=system.note;card.append(note);}
+      card.append(link);grid.append(card);
+    }
+    count.textContent=shown+" system"+(shown===1?"":"s");
+  }
+  search.addEventListener("input",render);render();
+})();
+</script></body></html>

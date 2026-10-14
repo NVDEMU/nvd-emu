@@ -150,7 +150,8 @@
     img.loading="lazy";
     img.decoding="async";
     img.referrerPolicy="no-referrer";
-    img.crossOrigin = "anonymous";
+    // Keep game-cover requests in normal image mode. Forcing CORS here can make
+    // Libretro thumbnail hosts reject images that previously loaded normally.
     img.alt=displayGameName(entry.name)+" cover art";
     const fallback=img.parentElement&&img.parentElement.querySelector(".cover-fallback");
     const urls=candidatesFor(entry,system);

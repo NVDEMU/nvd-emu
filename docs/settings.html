@@ -62,7 +62,23 @@
   if(!window.confirm("Clear all NVD-EMU game data for this browser profile? This origin reports "+used+" of total storage in use. This permanently deletes locally saved NVD-EMU ROM copies, legacy app databases and app-owned caches, including orphaned records the library cannot see. Original files on disk and unrelated app databases are not deleted."))return;
   const typed=window.prompt("Final confirmation: type CLEAR to remove NVD-EMU game data.");if(String(typed||"").trim().toUpperCase()!=="CLEAR"){setStatus("settings-status","Recovery cancelled. No cleanup was run.");return;}
   $("clear-all-data").disabled=true;setStatus("settings-status","Removing NVD-EMU databases, legacy game data and app caches…");
-  try{const result=await window.NVDLibrary.clearAllAppData();await refresh();const warningText=result.errors.length?" Warnings: "+result.errors.join(" | "):"";$("recovery-result").textContent="Recovery attempted: "+[...new Set(result.databasesRemoved)].length+" app database name(s), "+result.cachesRemoved.length+" cache(s), "+result.opfsEntriesRemoved.length+" private file-system item(s), and "+result.legacyKeysRemoved+" legacy key(s)."+warningText;setStatus("settings-status",result.errors.length?"Recovery finished with warnings. Close other NVD-EMU tabs and retry blocked database deletions.":"NVD-EMU data cleanup completed. The visible library should be empty; origin-wide usage may take a moment to settle.",result.errors.length?"error":"ok");if(result.afterEstimate&&Number.isFinite(result.afterEstimate.usage))$("storage-usage").textContent=size(result.afterEstimate.usage)+" used after cleanup (origin-wide estimate");}
+  try {
+   const result = await window.NVDLibrary.clearAllAppData();
+   await refresh();
+   const warningText = result.errors.length ? (" Warnings: " + result.errors.join(" | ")) : "";
+   const databaseCount = new Set(result.databasesRemoved).size;
+   const summary = "Recovery attempted: " + databaseCount + " app database name(s), " +
+     result.cachesRemoved.length + " cache(s), " + result.opfsEntriesRemoved.length +
+     " private file-system item(s), and " + result.legacyKeysRemoved + " legacy key(s)." + warningText;
+   $("recovery-result").textContent = summary;
+   const resultMessage = result.errors.length
+     ? "Recovery finished with warnings. Close other NVD-EMU tabs and retry blocked database deletions."
+     : "NVD-EMU data cleanup completed. The visible library should be empty; origin-wide usage may take a moment to settle.";
+   setStatus("settings-status", resultMessage, result.errors.length ? "error" : "ok");
+   if (result.afterEstimate && Number.isFinite(result.afterEstimate.usage)) {
+     $("storage-usage").textContent = size(result.afterEstimate.usage) + " used after cleanup (origin-wide estimate)";
+   }
+  }
   catch(error){setStatus("settings-status","Recovery failed: "+(error.message||String(error)),"error");$("recovery-result").textContent="Complete cleanup was not confirmed. Close other NVD-EMU tabs and retry.";}finally{$("clear-all-data").disabled=false;}
  });
  const initial=readPrefs();if(initial.requestPersistentStorage===true)window.NVDLibrary.requestPersistence().catch(()=>{});refresh().catch(error=>setStatus("settings-status","Storage scan failed: "+error.message,"error"));

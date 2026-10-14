@@ -43,6 +43,10 @@ cmake --build build --config Release
 
 The exact Qt deployment and packaging steps are handled by the GitHub Actions workflow.
 
+## macOS downloads and Gatekeeper
+
+macOS release downloads require a Developer ID Application certificate and successful Apple notarization. Until these repository secrets are configured, CI keeps macOS builds as short-lived artifacts and does not publish a public Mac DMG/ZIP that Gatekeeper may block. See [the macOS signing guide](docs/macos-signing.md) for GUI-based certificate setup, GitHub Secrets, and a local-only Base64 helper. Windows release builds continue normally.
+
 ## Development principles
 
 1. Keep the frontend separate from emulation engines.

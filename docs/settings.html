@@ -14,6 +14,7 @@
     <div class="form-row"><div><div class="eyebrow">GAMES SAVED</div><h2 id="saved-count" style="font-size:28px;margin-top:8px">—</h2></div><div><div class="eyebrow">PERSISTENT STORAGE</div><h2 id="persisted-state" style="font-size:18px;margin-top:10px">Checking…</h2></div></div>
     <div class="eyebrow" style="margin-top:22px">SPACE USED</div><div class="storage-meter"><span id="storage-bar"></span></div><div id="storage-usage" class="muted" style="font-size:12px">Checking usage…</div>
     <div id="settings-status" class="status" role="status">Checking local database…</div>
+    <div style="margin-top:18px"><div class="eyebrow">EXPERIMENTAL 3DS THREADING</div><h2 id="isolation-state" style="font-size:18px;margin-top:8px">Checking…</h2><p id="isolation-note" style="font-size:12px;margin:7px 0 0">3DS uses a nightly EmulatorJS core and needs SharedArrayBuffer through cross-origin isolation. This status checks whether this browser has enabled it.</p></div>
     <div class="page-toolbar"><button id="request-persistence" class="primary">Request persistent storage</button><a class="button" href="./library.html">Manage game library</a></div>
   </div></section>
   <section class="card"><div class="card-head"><h2>Privacy and compatibility</h2></div><div class="card-body">
@@ -29,6 +30,14 @@
 (() => {
   const $=id=>document.getElementById(id);
   const size=n=>n<1024*1024?(n/1024).toFixed(1)+" KB":n<1024*1024*1024?(n/1024/1024).toFixed(1)+" MB":(n/1024/1024/1024).toFixed(2)+" GB";
+  function updateIsolation(){
+    const ready=window.crossOriginIsolated===true && typeof SharedArrayBuffer==="function";
+    $("isolation-state").textContent=ready?"Available — 3DS can try to launch":"Not available — 3DS may not start";
+    $("isolation-note").textContent=ready
+      ?"This browser reports cross-origin isolation and SharedArrayBuffer. The 3DS core is still experimental and may fail for individual games."
+      :"This page is not cross-origin isolated. Reload after the service-worker setup finishes, use a supported desktop browser, and avoid private browsing if it blocks service workers.";
+  }
+  updateIsolation();
   async function refresh(){
     try{
       const games=await window.NVDLibrary.list();$("saved-count").textContent=String(games.length);

@@ -315,6 +315,7 @@
   function chooseSystem(id) {
     if (!systems[id]) return;
     select.value = id;
+    $("test-2600").classList.toggle("hidden", id !== "atari2600");
     if (selectedFile) setSelectedFile(selectedFile);
     $("view-overview").classList.remove("hidden");
     setView("overview");

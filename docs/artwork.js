@@ -12,7 +12,7 @@
     commodore: "./assets/logos/commodore.svg",
     snk: "Neo Geo logo.svg",
     "3do": "3DO Logo.svg",
-    microsoft: "MS-DOS logo.svg",
+    microsoft: "Microsoft logo (2012).svg",
     philips: "Philips CD-i logo.svg",
     arcade: ""
   };

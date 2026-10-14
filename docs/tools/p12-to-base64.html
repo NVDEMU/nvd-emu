@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Local P12 → Base64 helper | nvd-emu</title>
+<style>
+  :root { color-scheme: dark; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  body { margin: 0; padding: 32px 16px; background: #101114; color: #f3f3f5; }
+  main { max-width: 760px; margin: 0 auto; }
+  .brand { display:flex; align-items:center; gap:12px; margin-bottom:28px; }
+  .mark { width:40px;height:40px;display:grid;place-items:center;background:#dc292b;color:white;font-weight:900;font-size:22px; }
+  h1 { font-size: clamp(24px, 5vw, 34px); margin: 0 0 8px; }
+  p { color:#b5b6bf; line-height:1.55; }
+  .card { border:1px solid #34353d; background:#17181c; border-radius:14px; padding:22px; margin:18px 0; }
+  .warning { border-left:4px solid #dc292b; padding-left:14px; color:#f0c4c4; }
+  label { display:block; font-weight:700; margin:14px 0 8px; }
+  input[type=file], textarea { width:100%; box-sizing:border-box; }
+  input[type=file] { background:#202126; padding:12px; border:1px solid #393a43; border-radius:8px; }
+  textarea { min-height:190px; resize:vertical; background:#0c0d0f; color:#e9e9ee; padding:12px; border:1px solid #393a43; border-radius:8px; font:12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+  button { border:0; border-radius:8px; padding:12px 16px; background:#dc292b; color:#fff; font-weight:700; cursor:pointer; margin:14px 8px 0 0; }
+  button.secondary { background:#303139; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  #status { min-height:1.5em; color:#b5b6bf; }
+  code { color:#ffc5c5; overflow-wrap:anywhere; }
+  footer { font-size:13px; color:#858791; margin-top:24px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="brand"><div class="mark">N</div><div><strong>nvd-emu</strong><div style="font-size:12px;color:#999ba6">LOCAL CERTIFICATE HELPER</div></div></div>
+  <h1>Encode a signing certificate locally</h1>
+  <p>This tool converts a password-protected <code>.p12</code> certificate file into Base64 text for the GitHub Actions secret <code>APPLE_CERTIFICATE_P12_BASE64</code>.</p>
+  <div class="card">
+    <p class="warning"><strong>Private key warning:</strong> a .p12 file may contain the private key used to sign macOS releases. Use this page locally, never commit the .p12 or encoded output, and do not share either with anyone. Close this page after copying your secret.</p>
+    <label for="cert">Select your exported .p12 file</label>
+    <input id="cert" type="file" accept=".p12,.pfx,application/x-pkcs12">
+    <button id="encode" type="button">Encode locally</button>
+    <button id="copy" type="button" class="secondary" disabled>Copy Base64</button>
+    <div id="status" role="status" aria-live="polite">No file selected. Nothing is uploaded anywhere.</div>
+    <label for="output">Base64 output (keep secret)</label>
+    <textarea id="output" readonly spellcheck="false" autocomplete="off" placeholder="Encoded text appears here after you select a .p12 file and choose Encode locally."></textarea>
+  </div>
+  <div class="card">
+    <strong>Privacy checks</strong>
+    <p>This page contains no external scripts, analytics, network requests, or upload form. Your file is read by the browser on this device only. The output is shown locally so you can copy it into GitHub Settings → Secrets and variables → Actions.</p>
+  </div>
+  <footer>nvd-emu project utility. Only use with a certificate you own and are authorized to use.</footer>
+</main>
+<script>
+(() => {
+  const fileInput = document.getElementById("cert");
+  const encodeButton = document.getElementById("encode");
+  const copyButton = document.getElementById("copy");
+  const output = document.getElementById("output");
+  const status = document.getElementById("status");
+
+  function toBase64(buffer) {
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 0x8000;
+    let binary = "";
+    for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+      binary += String.fromCharCode(...bytes.subarray(offset, Math.min(offset + chunkSize, bytes.length)));
+    }
+    return btoa(binary);
+  }
+
+  encodeButton.addEventListener("click", async () => {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) {
+      status.textContent = "Select the .p12 file first.";
+      return;
+    }
+    if (file.size === 0 || file.size > 20 * 1024 * 1024) {
+      status.textContent = "File is empty or larger than the 20 MB safety limit.";
+      return;
+    }
+    encodeButton.disabled = true;
+    copyButton.disabled = true;
+    output.value = "";
+    status.textContent = "Encoding locally…";
+    try {
+      const buffer = await file.arrayBuffer();
+      output.value = toBase64(buffer);
+      copyButton.disabled = false;
+      status.textContent = "Done. The file was processed locally; no network requests were made.";
+    } catch (error) {
+      output.value = "";
+      status.textContent = "Could not read this file. Check that it is a valid .p12/.pfx file.";
+    } finally {
+      encodeButton.disabled = false;
+    }
+  });
+
+  copyButton.addEventListener("click", async () => {
+    if (!output.value) return;
+    try {
+      await navigator.clipboard.writeText(output.value);
+      status.textContent = "Base64 copied. Paste it directly into GitHub Actions secrets.";
+    } catch {
+      output.focus();
+      output.select();
+      const ok = document.execCommand("copy");
+      status.textContent = ok
+        ? "Base64 copied. Paste it directly into GitHub Actions secrets."
+        : "Copy was blocked. Select all the output and copy it manually.";
+    }
+  });
+})();
+</script>
+</body>
+</html>

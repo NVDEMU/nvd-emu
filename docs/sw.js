@@ -1,5 +1,9 @@
-const CACHE_NAME = "nvd-emu-web-shell-v4";
-const APP_FILES = ["./", "./index.html", "./manifest.webmanifest", "./nvd-emu-logo.svg"];
+const CACHE_NAME = "nvd-emu-web-shell-v5";
+const APP_FILES = [
+  "./", "./index.html", "./library.html", "./systems.html", "./player.html",
+  "./settings.html", "./site.css", "./systems-data.js", "./artwork.js",
+  "./storage.js", "./manifest.webmanifest", "./nvd-emu-logo.svg"
+];
 
 self.addEventListener("install", event => {
   event.waitUntil(

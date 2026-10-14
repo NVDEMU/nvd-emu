@@ -62,6 +62,14 @@ jobs:
               raise SystemExit("The player is not passing the threading option to EmulatorJS")
           if "Cross-Origin-Embedder-Policy" not in Path("docs/sw.js").read_text(encoding="utf-8"):
               raise SystemExit("The cross-origin isolation service-worker shim is missing")
+          artwork = Path("docs/artwork.js").read_text(encoding="utf-8")
+          if "fallbackLogoSvg" in artwork or "brandNames" in artwork:
+              raise SystemExit("Fabricated/generated console-logo fallback code must not be present")
+          logo_mappings = re.findall(r'logoFile:', catalog)
+          if len(logo_mappings) < 36:
+              raise SystemExit(f"Expected at least 36 genuine platform-logo mappings, found {len(logo_mappings)}")
+          if 'logoFile:"Virtualboy logo.svg"' not in catalog or 'logoFile:"Nintendo 3DS logo.svg"' not in catalog:
+              raise SystemExit("Virtual Boy and Nintendo 3DS system logos must use actual logo assets")
           if "function renderSystemCatalog()" not in html:
               raise SystemExit("The dynamic system picker and compatibility list are missing")
           if "wasm-dolphin" not in html or "retail-disc library flow" not in html:
@@ -93,7 +101,7 @@ jobs:
             test -f "$script" && node --check "$script"
           done
           for script in docs/systems-data.js docs/artwork.js docs/storage.js docs/sw.js docs/coi-bootstrap.js; do node --check "$script"; done
-          for logo in arcade atari playstation sega nec commodore; do test -f "docs/assets/logos/$logo.svg"; done
+          for logo in atari playstation sega nec commodore; do test -f "docs/assets/logos/$logo.svg"; done
           test -f docs/nvd-emu-logo.svg
           test -f docs/.nojekyll
           test ! -e CMakeLists.txt

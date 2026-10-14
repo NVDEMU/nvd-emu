@@ -7,6 +7,22 @@
     <link rel="icon" href="../nvd-emu-logo.svg">
     <link rel="stylesheet" href="./src/styles.css">
   <script src="../coi-bootstrap.js"></script><script src="../storage.js"></script>
+<style>
+.keyboard-controls-dialog{width:min(760px,calc(100vw - 24px));max-height:min(86vh,850px);padding:18px;border:1px solid #454854;border-radius:16px;background:#15171d;color:#f5f5f7;box-shadow:0 25px 90px #000b}
+.keyboard-controls-dialog::backdrop{background:#000b;backdrop-filter:blur(4px)}
+.keyboard-dialog-heading,.keyboard-dialog-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.keyboard-dialog-heading h2{margin:0;font-size:19px}
+.keyboard-dialog-note{color:#b6bac5;font-size:13px;line-height:1.5;margin:12px 0}
+.keyboard-bindings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:52vh;overflow:auto;margin:14px 0;padding:1px}
+.keyboard-binding-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid #343744;border-radius:9px;background:#1c1f27;min-width:0}
+.keyboard-binding-name{text-transform:capitalize;font-size:12px;color:#d7d9e0}
+.keyboard-binding-key{min-width:105px;max-width:48%;padding:8px 10px;border:1px solid #515568;border-radius:7px;background:#282c37;color:#fff;font-weight:750}
+.keyboard-binding-key.capturing{background:#55383d;border-color:#ff9296;color:#fff}
+#keyboardCaptureStatus{margin:0 0 12px;color:#aeb4c3;font-size:12px;line-height:1.5}
+#screenHud[hidden]{display:none!important}
+#fullscreenButton{min-width:118px}
+@media(max-width:600px){.keyboard-bindings-grid{grid-template-columns:1fr}.keyboard-controls-dialog{padding:12px}#fullscreenButton{min-width:0}.topbar-actions{gap:5px}}
+</style>
 </head>
   <body>
 <div id="nvd-engine-notice" hidden role="status" aria-live="polite" style="position:fixed;left:12px;right:12px;top:72px;z-index:10000;padding:10px 14px;border:1px solid #805f34;border-radius:9px;background:#211c14;color:#f4d9a7;font:12px/1.5 system-ui,sans-serif"></div>
@@ -21,12 +37,13 @@
         </div>
         <div class="topbar-actions">
           <span class="status-pill" id="statusPill">Booting</span>
-          <button class="icon-button" id="overlayToggle" type="button" title="Toggle FPS overlay" aria-pressed="true">FPS</button>
+          <button class="icon-button" id="overlayToggle" type="button" title="Toggle performance overlay" aria-pressed="false">FPS</button>
+          <button class="icon-button" id="keyboardControlsButton" type="button" title="Remap keyboard controls" aria-haspopup="dialog">KEYS</button>
           <button class="icon-button" id="debugToggle" type="button" title="Toggle diagnostics" aria-expanded="false" aria-controls="debugPanel">DBG</button>
           <button class="icon-button tip" id="panelToggle" type="button"
                   data-tip="Show or hide the side panel" aria-expanded="true"
                   aria-controls="controlPanel" aria-label="Hide side panel">PANEL</button>
-          <button class="icon-button" id="fullscreenButton" type="button" title="Fullscreen" aria-label="Fullscreen">[]</button>
+          <button class="icon-button" id="fullscreenButton" type="button" title="Show the game fullscreen" aria-label="Enter fullscreen">Fullscreen</button>
         </div>
       </header>
 
@@ -77,7 +94,7 @@
                 <label class="file-button tip" data-tip="Open a GameCube disc image">
                   <span class="glyph" aria-hidden="true">&#x23CF;</span>
                   <span class="btn-text">Open disc</span>
-                  <input id="romInput" type="file" accept=".iso,.nkit.iso,.gcm,.rvz,.wbfs,.ciso,.dol,.elf">
+                  <input id="romInput" type="file" accept=".iso,.nkit.iso,.gcm,.rvz,.wbfs,.ciso,.wia,.gcz,.dol,.elf">
                 </label>
                 <button id="runButton" class="tip" type="button" data-tip="Pause or resume emulation" aria-label="Pause">
                   <span class="glyph" aria-hidden="true">&#x23F8;</span>
@@ -399,7 +416,14 @@
                             </main>
                             </div>
                             
-                            <script type="module" src="./src/bootstrap.js"></script>
+                            <dialog id="keyboardControlsDialog" class="keyboard-controls-dialog" aria-labelledby="keyboardControlsHeading">
+  <div class="keyboard-dialog-heading"><h2 id="keyboardControlsHeading">Keyboard controls</h2><button id="closeKeyboardControls" type="button" class="icon-button" aria-label="Close keyboard controls">Done</button></div>
+  <p class="keyboard-dialog-note">Keyboard input is enabled by default. Select an action, then press the key you want to bind. Remappings are saved in this browser. Gamepads remain supported. Wii Remote motion and pointer input are not implemented in this browser build, so many Wii games will not be fully playable yet.</p>
+  <div id="keyboardBindingsGrid" class="keyboard-bindings-grid"></div>
+  <div class="keyboard-dialog-actions"><button id="resetKeyboardBindings" type="button" class="icon-button">Reset default keys</button></div>
+  <p id="keyboardCaptureStatus" role="status" aria-live="polite">Select an action to change its key.</p>
+</dialog>
+<script type="module" src="./src/bootstrap.js"></script>
 <script type="module" src="../gamecube-bridge.js"></script>
                             </body>
                             </html>

@@ -5,6 +5,7 @@ import { startMainThreadProfiler } from "./main-profiler.js";
 import { createCausalTelemetry, deepMerge } from "./causal-telemetry.js";
 import {
   CONTROL_LABELS,
+  DEFAULT_KEY_BINDINGS,
   formatControlLabel,
   gamepadInputsEqual,
   inputStateFromPressed,
@@ -124,9 +125,12 @@ const elements = {
 };
 
 const DEBUG_PREF_KEY = "wasm-dolphin.debug-open";
-const OSD_PREF_KEY = "wasm-dolphin.osd-visible";
+const OSD_PREF_KEY = "wasm-dolphin.osd-visible-v2";
+const KEY_BINDINGS_PREF_KEY = "nvd-emu-keyboard-bindings-v1";
 
 const keyboardPressed = new Set();
+let keyboardBindings = readKeyboardBindings();
+let keyCaptureControl = null;
 let touchPressed = new Set();
 let gamepadPressed = new Set();
 let gamepadInputState = null;
@@ -243,6 +247,7 @@ window.__loadStateFileFs = async (fsPath) => {
 renderControlGrid();
 wireSettings();
 wireDiagnostics();
+wireKeyboardRemapping();
 wirePanelToggle();
 wireVolumeDial();
 wireAspectSelect();
@@ -437,13 +442,24 @@ function wireTransport() {
                       audio.label(), "Mute or unmute audio");
   });
 
+  const updateFullscreenLabel = () => {
+    const active = Boolean(document.fullscreenElement);
+    elements.fullscreenButton.textContent = active ? "Exit fullscreen" : "Fullscreen";
+    elements.fullscreenButton.setAttribute("aria-label", active ? "Exit fullscreen" : "Enter fullscreen");
+    elements.fullscreenButton.title = active ? "Exit fullscreen (Esc)" : "Show the game fullscreen";
+  };
   elements.fullscreenButton.addEventListener("click", async () => {
-    if (document.fullscreenElement) {
-      await document.exitFullscreen();
-    } else {
-      await elements.dropZone.requestFullscreen();
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else if (elements.dropZone.requestFullscreen) await elements.dropZone.requestFullscreen();
+      else throw new Error("Fullscreen is not supported by this browser.");
+      updateFullscreenLabel();
+    } catch (error) {
+      setStatus("Could not enter fullscreen. Allow fullscreen for this site and try again.", "error");
     }
   });
+  document.addEventListener("fullscreenchange", updateFullscreenLabel);
+  updateFullscreenLabel();
 }
 
 function wireSettings() {
@@ -468,7 +484,7 @@ function wireSettings() {
 
 function wireDiagnostics() {
   const debugOpen = localStorage.getItem(DEBUG_PREF_KEY) === "1";
-  const osdVisible = localStorage.getItem(OSD_PREF_KEY) !== "0";
+  const osdVisible = localStorage.getItem(OSD_PREF_KEY) === "1";
 
   setDebugOpen(debugOpen);
   setOverlayVisible(osdVisible);
@@ -627,13 +643,13 @@ function wirePanelToggle() {
     toggle.setAttribute("aria-label", open ? "Hide side panel" : "Show side panel");
     toggle.classList.toggle("active", open);
   };
-  let open = true;
-  try { open = localStorage.getItem("wasmDolphinPanelOpen") !== "0"; } catch {}
+  let open = false;
+  try { open = localStorage.getItem("wasmDolphinPanelOpen-v2") === "1"; } catch {}
   apply(open);
   toggle.addEventListener("click", () => {
     open = !open;
     apply(open);
-    try { localStorage.setItem("wasmDolphinPanelOpen", open ? "1" : "0"); } catch {}
+    try { localStorage.setItem("wasmDolphinPanelOpen-v2", open ? "1" : "0"); } catch {}
   });
 }
 
@@ -938,13 +954,115 @@ function renderRootEntries(entries) {
   }
 }
 
+
+function readKeyboardBindings() {
+  try {
+    const raw = localStorage.getItem(KEY_BINDINGS_PREF_KEY);
+    if (!raw) return { ...DEFAULT_KEY_BINDINGS };
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return { ...DEFAULT_KEY_BINDINGS };
+    const valid = new Set(CONTROL_LABELS);
+    return Object.fromEntries(Object.entries(parsed).filter(([code, control]) =>
+      typeof code === "string" && /^[A-Za-z][A-Za-z0-9]*$/.test(code) && valid.has(control)));
+  } catch (_) { return { ...DEFAULT_KEY_BINDINGS }; }
+}
+function keyboardCodeLabel(code) {
+  if (!code) return "Unassigned";
+  if (code.startsWith("Key") && code.length === 4) return code.slice(3);
+  if (code.startsWith("Digit") && code.length === 6) return code.slice(5);
+  const labels = {ArrowUp:"↑",ArrowDown:"↓",ArrowLeft:"←",ArrowRight:"→",Enter:"Enter",Space:"Space",Backspace:"Backspace",NumpadEnter:"Numpad Enter",Minus:"-",Equal:"=",BracketLeft:"[",BracketRight:"]",Backslash:"\\",Semicolon:";",Quote:"'",Comma:",",Period:".",Slash:"/",Escape:"Esc",PageUp:"Page Up",PageDown:"Page Down"};
+  return labels[code] || code;
+}
+function setKeyboardCaptureStatus(message) {
+  const status = document.getElementById("keyboardCaptureStatus");
+  if (status) status.textContent = message;
+}
+function saveKeyboardBindings() {
+  try { localStorage.setItem(KEY_BINDINGS_PREF_KEY, JSON.stringify(keyboardBindings)); return true; }
+  catch (_) { setKeyboardCaptureStatus("Remap works for this session, but browser storage blocked saving it."); return false; }
+}
+function assignKeyboardBinding(code, control) {
+  const previousCode = Object.keys(keyboardBindings).find((key) => keyboardBindings[key] === control);
+  const displacedControl = keyboardBindings[code];
+  if (previousCode && previousCode !== code) {
+    delete keyboardBindings[previousCode];
+    if (displacedControl && displacedControl !== control) keyboardBindings[previousCode] = displacedControl;
+  }
+  keyboardBindings[code] = control;
+  saveKeyboardBindings();
+}
+function renderKeyboardBindings() {
+  const grid = document.getElementById("keyboardBindingsGrid");
+  if (!grid) return;
+  grid.replaceChildren();
+  for (const control of CONTROL_LABELS) {
+    const row = document.createElement("div");
+    row.className = "keyboard-binding-row";
+    const name = document.createElement("span");
+    name.className = "keyboard-binding-name";
+    name.textContent = formatControlLabel(control);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "keyboard-binding-key";
+    const code = Object.keys(keyboardBindings).find((key) => keyboardBindings[key] === control);
+    button.textContent = keyCaptureControl === control ? "Press a key…" : keyboardCodeLabel(code);
+    button.classList.toggle("capturing", keyCaptureControl === control);
+    button.setAttribute("aria-label", "Remap " + formatControlLabel(control));
+    button.addEventListener("click", () => {
+      keyCaptureControl = control;
+      renderKeyboardBindings();
+      setKeyboardCaptureStatus("Press a key for " + formatControlLabel(control) + ". Press Esc to cancel.");
+    });
+    row.append(name, button);
+    grid.append(row);
+  }
+}
+function wireKeyboardRemapping() {
+  const dialog = document.getElementById("keyboardControlsDialog");
+  const open = document.getElementById("keyboardControlsButton");
+  const close = document.getElementById("closeKeyboardControls");
+  const reset = document.getElementById("resetKeyboardBindings");
+  if (!dialog || !open || !close || !reset) return;
+  open.addEventListener("click", () => { renderKeyboardBindings(); if (!dialog.open) dialog.showModal(); });
+  close.addEventListener("click", () => { keyCaptureControl = null; dialog.close(); });
+  reset.addEventListener("click", () => {
+    keyboardBindings = { ...DEFAULT_KEY_BINDINGS };
+    try { localStorage.removeItem(KEY_BINDINGS_PREF_KEY); } catch (_) {}
+    keyCaptureControl = null;
+    renderKeyboardBindings();
+    setKeyboardCaptureStatus("Default keyboard controls restored.");
+  });
+  dialog.addEventListener("cancel", () => { keyCaptureControl = null; });
+  dialog.addEventListener("close", () => { keyCaptureControl = null; renderKeyboardBindings(); });
+  renderKeyboardBindings();
+}
+
 function wireKeyboard() {
   document.addEventListener("keydown", (event) => {
+    if (keyCaptureControl) {
+      if (event.code === "Escape") {
+        keyCaptureControl = null;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        renderKeyboardBindings();
+        setKeyboardCaptureStatus("Key capture cancelled. Click any action to remap it.");
+        return;
+      }
+      if (["Tab","ShiftLeft","ShiftRight","ControlLeft","ControlRight","AltLeft","AltRight","MetaLeft","MetaRight"].includes(event.code)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const control = keyCaptureControl;
+      assignKeyboardBinding(event.code, control);
+      keyCaptureControl = null;
+      renderKeyboardBindings();
+      setKeyboardCaptureStatus(formatControlLabel(control) + " mapped to " + keyboardCodeLabel(event.code) + ".");
+      return;
+    }
     if (event.repeat) {
       return;
     }
 
-    const button = resolveKeyboardButton(event.code);
+    const button = resolveKeyboardButton(event.code, keyboardBindings);
     if (!button) {
       return;
     }
@@ -957,7 +1075,8 @@ function wireKeyboard() {
   });
 
   document.addEventListener("keyup", (event) => {
-    const button = resolveKeyboardButton(event.code);
+    if (keyCaptureControl) return;
+    const button = resolveKeyboardButton(event.code, keyboardBindings);
     if (!button) {
       return;
     }

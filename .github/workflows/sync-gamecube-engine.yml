@@ -79,6 +79,7 @@ jobs:
           html = html.replace(marker, marker + chr(10) + '<script type="module" src="../gamecube-bridge.js"></script>', 1)
           path.write_text(html, encoding="utf-8")
           PY
+          python3 .github/scripts/patch-gamecube-runtime.py
           node --check docs/gamecube-engine/src/app.js
           node --check docs/gamecube-engine/src/core-host.js
           node --check docs/gamecube-engine/src/bootstrap.js

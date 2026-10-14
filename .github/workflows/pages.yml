@@ -63,10 +63,11 @@ jobs:
           if 'coreId:"azahar"' not in catalog:
               raise SystemExit("The Nintendo 3DS profile must use EmulatorJS's canonical Azahar core ID")
           player_page = Path("docs/player.html").read_text(encoding="utf-8")
-          if "window.EJS_ready=function()" not in player_page or "window.EJS_onGameStart=function()" not in player_page:
-              raise SystemExit("The player must report EmulatorJS ready/game-start events for black-screen diagnostics")
-          if 'window.__nvdReport("isolation-error"' not in player_page:
-              raise SystemExit("The player must verify SharedArrayBuffer inside the threaded emulator frame")
+          emulator_page = Path("docs/emulator.html").read_text(encoding="utf-8")
+          if "window.EJS_ready = function()" not in emulator_page or "window.EJS_onGameStart = function()" not in emulator_page:
+              raise SystemExit("The emulator document must report EmulatorJS ready/game-start events")
+          if 'report("isolation-error"' not in emulator_page:
+              raise SystemExit("The emulator document must verify SharedArrayBuffer inside the threaded core context")
           if "core-timeout" not in player_page or not Path("docs/emulator.html").is_file():
               raise SystemExit("The dedicated emulator document and explicit startup-timeout reporting are required")
           storage = Path("docs/storage.js").read_text(encoding="utf-8")
@@ -121,10 +122,10 @@ jobs:
               inline = re.findall(r"<script(?![^>]*\bsrc=)(?:\s[^>]*)?>([\s\S]*?)</script>", source)
               for index, code in enumerate(inline):
                   Path(f"/tmp/nvd-emu-{Path(page).stem}-{index}.js").write_text(code, encoding="utf-8")
-          print(f"Manifest, {len(configured_systems)} system mappings, four standalone pages, artwork and storage modules, PS1 BIOS/DualShock options, save controls, Atari test and Pages root validated.")
+          print(f"Manifest, {len(configured_systems)} system mappings, five standalone pages, artwork and storage modules, duplicate-game checks, PS1 BIOS/DualShock options, save controls, Atari test and Pages root validated.")
           PY
           node --check /tmp/nvd-emu-web-inline.js
-          for script in /tmp/nvd-emu-library-*.js /tmp/nvd-emu-systems-*.js /tmp/nvd-emu-player-*.js /tmp/nvd-emu-settings-*.js; do
+          for script in /tmp/nvd-emu-library-*.js /tmp/nvd-emu-systems-*.js /tmp/nvd-emu-player-*.js /tmp/nvd-emu-settings-*.js /tmp/nvd-emu-emulator-*.js; do
             test -f "$script" && node --check "$script"
           done
           for script in docs/systems-data.js docs/artwork.js docs/storage.js docs/sw.js docs/coi-bootstrap.js; do node --check "$script"; done

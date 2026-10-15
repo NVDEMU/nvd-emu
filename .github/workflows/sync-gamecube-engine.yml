@@ -14,6 +14,8 @@ on:
       - "docs/sw.js"
       - "docs/gamecube-bridge.js"
       - ".github/workflows/sync-gamecube-engine.yml"
+      - ".github/scripts/patch-gamecube-runtime.py"
+      - ".github/scripts/patch-wii-input-core.py"
   workflow_dispatch:
 
 permissions:
@@ -45,9 +47,23 @@ jobs:
           test -s "$upstream/cores/dolphin/dolphin-core-upstream.js"
           test -s "$upstream/cores/dolphin/dolphin-core-upstream.wasm"
           test -s "$upstream/src/bootstrap.js"
+          custom_core="$RUNNER_TEMP/nvd-custom-wii-core"
+          rm -rf "$custom_core"
+          if [ -s docs/gamecube-engine/cores/dolphin/wii-input-core.json ] && python3 -c 'import json,sys; print(1 if json.load(open(sys.argv[1], encoding="utf-8")).get("bridge") == "nvd-wii-input-bridge-v1" else 0)' docs/gamecube-engine/cores/dolphin/wii-input-core.json | grep -qx 1; then
+            mkdir -p "$custom_core"
+            cp docs/gamecube-engine/cores/dolphin/dolphin-core-upstream.js "$custom_core/"
+            cp docs/gamecube-engine/cores/dolphin/dolphin-core-upstream.wasm "$custom_core/"
+            cp docs/gamecube-engine/cores/dolphin/wii-input-core.json "$custom_core/"
+            echo "Found a Wii-input-enabled WASM core; keeping it across the upstream UI sync."
+          fi
           rm -rf docs/gamecube-engine
           mkdir -p docs/gamecube-engine
           cp -R "$upstream/src" "$upstream/cores" docs/gamecube-engine/
+          if [ -s "$custom_core/dolphin-core-upstream.wasm" ]; then
+            cp "$custom_core/dolphin-core-upstream.js" docs/gamecube-engine/cores/dolphin/
+            cp "$custom_core/dolphin-core-upstream.wasm" docs/gamecube-engine/cores/dolphin/
+            cp "$custom_core/wii-input-core.json" docs/gamecube-engine/cores/dolphin/
+          fi
           cp "$upstream/LICENSE" docs/gamecube-engine/LICENSE
           cp "$upstream/index.html" docs/gamecube-engine/index.html
           printf '{"type":"module"}\n' > docs/gamecube-engine/package.json

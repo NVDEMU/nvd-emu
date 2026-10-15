@@ -297,33 +297,33 @@ app = replace_once(app, '    syncGameInfo(game);\n    host.start();',
     "Wii state after boot")
 app_path.write_text(app, encoding="utf-8")
 
-          core_host_path = Path("docs/gamecube-engine/src/core-host.js")
-          core_host = core_host_path.read_text(encoding="utf-8")
-          core_host = replace_once(core_host,
-              '  setInputState(inputState) {\n    this.buttonMask = inputState?.mask >>> 0;\n    this.adapter.setInputState?.(inputState);\n  }',
-              '  setInputState(inputState) {\n    this.buttonMask = inputState?.mask >>> 0;\n    this.adapter.setInputState?.(inputState);\n  }\n\n  setWiiRemoteState(state) {\n    this.adapter.setWiiRemoteState?.(state);\n  }',
-              "core host Wii input forwarding")
-          core_host_path.write_text(core_host, encoding="utf-8")
+core_host_path = Path("docs/gamecube-engine/src/core-host.js")
+core_host = core_host_path.read_text(encoding="utf-8")
+core_host = replace_once(core_host,
+    '  setInputState(inputState) {\n    this.buttonMask = inputState?.mask >>> 0;\n    this.adapter.setInputState?.(inputState);\n  }',
+    '  setInputState(inputState) {\n    this.buttonMask = inputState?.mask >>> 0;\n    this.adapter.setInputState?.(inputState);\n  }\n\n  setWiiRemoteState(state) {\n    this.adapter.setWiiRemoteState?.(state);\n  }',
+    "core host Wii input forwarding")
+core_host_path.write_text(core_host, encoding="utf-8")
 
-          adapter_path = Path("docs/gamecube-engine/src/upstream-worker-adapter.js")
-          adapter = adapter_path.read_text(encoding="utf-8")
-          adapter = replace_once(adapter, '  setInputState(state) {',
-              '  setWiiRemoteState(state) {\n    if (!this.loaded || !state) return;\n    const packed = {buttonMask:state.buttonMask >>> 0,dpadMask:state.dpadMask >>> 0,accelX:Number(state.accelX)||0,accelY:Number(state.accelY)||0,accelZ:Number(state.accelZ)||0,gyroX:Number(state.gyroX)||0,gyroY:Number(state.gyroY)||0,gyroZ:Number(state.gyroZ)||0,pointerX:Number(state.pointerX)||0,pointerY:Number(state.pointerY)||0,pointerEnabled:state.pointerEnabled?1:0};\n    const signature = Object.values(packed).join(":");\n    if (signature === this.lastWiiRemoteStateSignature) return;\n    this.lastWiiRemoteStateSignature = signature;\n    this.post("setWiiRemoteState", packed);\n  }\n\n  setInputState(state) {',
-              "worker adapter Wii input")
-          adapter_path.write_text(adapter, encoding="utf-8")
+adapter_path = Path("docs/gamecube-engine/src/upstream-worker-adapter.js")
+adapter = adapter_path.read_text(encoding="utf-8")
+adapter = replace_once(adapter, '  setInputState(state) {',
+    '  setWiiRemoteState(state) {\n    if (!this.loaded || !state) return;\n    const packed = {buttonMask:state.buttonMask >>> 0,dpadMask:state.dpadMask >>> 0,accelX:Number(state.accelX)||0,accelY:Number(state.accelY)||0,accelZ:Number(state.accelZ)||0,gyroX:Number(state.gyroX)||0,gyroY:Number(state.gyroY)||0,gyroZ:Number(state.gyroZ)||0,pointerX:Number(state.pointerX)||0,pointerY:Number(state.pointerY)||0,pointerEnabled:state.pointerEnabled?1:0};\n    const signature = Object.values(packed).join(":");\n    if (signature === this.lastWiiRemoteStateSignature) return;\n    this.lastWiiRemoteStateSignature = signature;\n    this.post("setWiiRemoteState", packed);\n  }\n\n  setInputState(state) {',
+    "worker adapter Wii input")
+adapter_path.write_text(adapter, encoding="utf-8")
 
-          worker_path = Path("docs/gamecube-engine/src/upstream-discio-worker.js")
-          worker = worker_path.read_text(encoding="utf-8")
-          worker = replace_once(worker,
-              '    runFrame: cwrap("RunFrame", null, []),',
-              '    setWiiRemoteState: optionalCwrap("SetWiiRemoteState", null, ["number","number","number","number","number","number","number","number","number","number","number"]),\n    runFrame: cwrap("RunFrame", null, []),',
-              "worker Wii input API")
-          worker = replace_once(worker,
-              '    case "runFrame":',
-              '    case "setWiiRemoteState":\n      api?.setWiiRemoteState?.(payload.buttonMask >>> 0,payload.dpadMask >>> 0,Number(payload.accelX)||0,Number(payload.accelY)||0,Number(payload.accelZ)||0,Number(payload.gyroX)||0,Number(payload.gyroY)||0,Number(payload.gyroZ)||0,Number(payload.pointerX)||0,Number(payload.pointerY)||0,payload.pointerEnabled?1:0);\n      return {};\n    case "runFrame":',
-              "worker Wii input message")
-          worker_path.write_text(worker, encoding="utf-8")
-          app_path.write_text(app, encoding="utf-8")
+worker_path = Path("docs/gamecube-engine/src/upstream-discio-worker.js")
+worker = worker_path.read_text(encoding="utf-8")
+worker = replace_once(worker,
+    '    runFrame: cwrap("RunFrame", null, []),',
+    '    setWiiRemoteState: optionalCwrap("SetWiiRemoteState", null, ["number","number","number","number","number","number","number","number","number","number","number"]),\n    runFrame: cwrap("RunFrame", null, []),',
+    "worker Wii input API")
+worker = replace_once(worker,
+    '    case "runFrame":',
+    '    case "setWiiRemoteState":\n      api?.setWiiRemoteState?.(payload.buttonMask >>> 0,payload.dpadMask >>> 0,Number(payload.accelX)||0,Number(payload.accelY)||0,Number(payload.accelZ)||0,Number(payload.gyroX)||0,Number(payload.gyroY)||0,Number(payload.gyroZ)||0,Number(payload.pointerX)||0,Number(payload.pointerY)||0,payload.pointerEnabled?1:0);\n      return {};\n    case "runFrame":',
+    "worker Wii input message")
+worker_path.write_text(worker, encoding="utf-8")
+app_path.write_text(app, encoding="utf-8")
 
 if 'id="keyboardControlsDialog"' not in index_path.read_text(encoding="utf-8"):
     raise SystemExit("Keyboard controls dialog validation failed")

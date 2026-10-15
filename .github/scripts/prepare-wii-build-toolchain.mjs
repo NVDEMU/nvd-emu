@@ -33,7 +33,8 @@ function firstVersion(output, label) {
 }
 function commitHash(output, label) {
   const match = output.match(/^commit-hash:\s*([0-9a-f]{40})\s*$/mi) ||
-    output.match(/git hash:\s*([0-9a-f]{40})/i);
+    output.match(/git hash:\s*([0-9a-f]{40})/i) ||
+    output.match(/\(([0-9a-f]{40})\)/i);
   if (!match) throw new Error("Cannot read " + label + " commit hash from: " + output);
   return match[1];
 }

@@ -47,26 +47,26 @@ bridge = r'''
 // the regular Wii Remote emulation/report pipeline instead of being a UI-only map.
 namespace NVDWiiInput
 {
-std::atomic<std::uint32_t> s_buttons{0};
-std::atomic<std::uint32_t> s_dpad{0};
-std::atomic<std::int32_t> s_accel_x_milli{0};
-std::atomic<std::int32_t> s_accel_y_milli{0};
-std::atomic<std::int32_t> s_accel_z_milli{9807};
-std::atomic<std::int32_t> s_gyro_x_milli{0};
-std::atomic<std::int32_t> s_gyro_y_milli{0};
-std::atomic<std::int32_t> s_gyro_z_milli{0};
-std::atomic<std::int32_t> s_pointer_x_milli{0};
-std::atomic<std::int32_t> s_pointer_y_milli{0};
-std::atomic<int> s_pointer_enabled{0};
+static std::atomic<std::uint32_t> s_buttons{0};
+static std::atomic<std::uint32_t> s_dpad{0};
+static std::atomic<std::int32_t> s_accel_x_milli{0};
+static std::atomic<std::int32_t> s_accel_y_milli{0};
+static std::atomic<std::int32_t> s_accel_z_milli{9807};
+static std::atomic<std::int32_t> s_gyro_x_milli{0};
+static std::atomic<std::int32_t> s_gyro_y_milli{0};
+static std::atomic<std::int32_t> s_gyro_z_milli{0};
+static std::atomic<std::int32_t> s_pointer_x_milli{0};
+static std::atomic<std::int32_t> s_pointer_y_milli{0};
+static std::atomic<int> s_pointer_enabled{0};
 
 float ReadMilli(const std::atomic<std::int32_t>& value)
 {
   return static_cast<float>(value.load(std::memory_order_relaxed)) / 1000.0f;
 }
 
-std::optional<ControllerEmu::ControlState> Override(
+std::optional<ControlState> Override(
     const std::string_view group, const std::string_view control,
-    const ControllerEmu::ControlState)
+    const ControlState)
 {
   const std::uint32_t buttons = s_buttons.load(std::memory_order_relaxed);
   if (group == "Buttons")

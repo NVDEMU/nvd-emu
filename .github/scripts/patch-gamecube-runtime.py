@@ -277,25 +277,25 @@ new_fs = '''  const updateFullscreenLabel = () => {
   document.addEventListener("fullscreenchange", updateFullscreenLabel);
   updateFullscreenLabel();'''
 app = replace_once(app, old_fs, new_fs, "app fullscreen")
-          app = replace_once(app, 'function syncInput(source) {\n  combinedPressed = mergePressedSets(keyboardPressed, touchPressed, gamepadPressed);\n  host.setInputState(inputStateFromPressed(combinedPressed, gamepadInputState));',
-              'function syncInput(source) {\n  combinedPressed = mergePressedSets(keyboardPressed, touchPressed, gamepadPressed);\n  if (isWiiMode) {\n    const aliases = {A:"WII_A",B:"WII_B",X:"WII_ONE",Y:"WII_TWO",START:"WII_PLUS",L:"WII_MINUS",Z:"WII_HOME",D_UP:"WII_DPAD_UP",D_DOWN:"WII_DPAD_DOWN",D_LEFT:"WII_DPAD_LEFT",D_RIGHT:"WII_DPAD_RIGHT"};\n    wiiPressed = new Set([...combinedPressed].map((button) => aliases[button] || button).filter((button) => WII_CONTROL_LABELS.includes(button)));\n    syncWiiInput(source);\n    return;\n  }\n  host.setInputState(inputStateFromPressed(combinedPressed, gamepadInputState));',
-              "sync input Wii route")
-          app = replace_once(app, 'function renderControlGrid() {\n  const fragment = document.createDocumentFragment();\n\n  for (const label of CONTROL_LABELS) {',
-              'function renderControlGrid() {\n  const fragment = document.createDocumentFragment();\n\n  for (const label of activeControlLabels()) {',
-              "render active controls")
-          app = replace_once(app, '      chip.textContent = formatControlLabel(label);',
-              '      chip.textContent = displayKeyboardControl(label);',
-              "control grid labels")
-          app = replace_once(app, 'wireKeyboard();\nwireTouchControls();\nwireGamepadPolling();',
-              'wireKeyboard();\nwireTouchControls();\nwireWiiPointer();\nwireGamepadPolling();',
-              "wire Wii pointer")
-          app = replace_once(app, '  .then(runSmokeScenario)\n  .catch((error) => {',
-              '  .then(() => { if (isWiiMode) syncInput("Wii Remote ready"); return runSmokeScenario(); })\n  .catch((error) => {',
-              "initial Wii state")
-          app = replace_once(app, '    syncGameInfo(game);\n    host.start();',
-              '    syncGameInfo(game);\n    host.start();\n    if (isWiiMode) syncInput("Wii Remote ready");',
-              "Wii state after boot")
-          app_path.write_text(app, encoding="utf-8")
+app = replace_once(app, 'function syncInput(source) {\n  combinedPressed = mergePressedSets(keyboardPressed, touchPressed, gamepadPressed);\n  host.setInputState(inputStateFromPressed(combinedPressed, gamepadInputState));',
+    'function syncInput(source) {\n  combinedPressed = mergePressedSets(keyboardPressed, touchPressed, gamepadPressed);\n  if (isWiiMode) {\n    const aliases = {A:"WII_A",B:"WII_B",X:"WII_ONE",Y:"WII_TWO",START:"WII_PLUS",L:"WII_MINUS",Z:"WII_HOME",D_UP:"WII_DPAD_UP",D_DOWN:"WII_DPAD_DOWN",D_LEFT:"WII_DPAD_LEFT",D_RIGHT:"WII_DPAD_RIGHT"};\n    wiiPressed = new Set([...combinedPressed].map((button) => aliases[button] || button).filter((button) => WII_CONTROL_LABELS.includes(button)));\n    syncWiiInput(source);\n    return;\n  }\n  host.setInputState(inputStateFromPressed(combinedPressed, gamepadInputState));',
+    "sync input Wii route")
+app = replace_once(app, 'function renderControlGrid() {\n  const fragment = document.createDocumentFragment();\n\n  for (const label of CONTROL_LABELS) {',
+    'function renderControlGrid() {\n  const fragment = document.createDocumentFragment();\n\n  for (const label of activeControlLabels()) {',
+    "render active controls")
+app = replace_once(app, '      chip.textContent = formatControlLabel(label);',
+    '      chip.textContent = displayKeyboardControl(label);',
+    "control grid labels")
+app = replace_once(app, 'wireKeyboard();\nwireTouchControls();\nwireGamepadPolling();',
+    'wireKeyboard();\nwireTouchControls();\nwireWiiPointer();\nwireGamepadPolling();',
+    "wire Wii pointer")
+app = replace_once(app, '  .then(runSmokeScenario)\n  .catch((error) => {',
+    '  .then(() => { if (isWiiMode) syncInput("Wii Remote ready"); return runSmokeScenario(); })\n  .catch((error) => {',
+    "initial Wii state")
+app = replace_once(app, '    syncGameInfo(game);\n    host.start();',
+    '    syncGameInfo(game);\n    host.start();\n    if (isWiiMode) syncInput("Wii Remote ready");',
+    "Wii state after boot")
+app_path.write_text(app, encoding="utf-8")
 
           core_host_path = Path("docs/gamecube-engine/src/core-host.js")
           core_host = core_host_path.read_text(encoding="utf-8")

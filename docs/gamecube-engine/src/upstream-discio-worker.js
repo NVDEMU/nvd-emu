@@ -992,6 +992,9 @@ async function handleMessage(type, payload) {
         inputGeneration: payload.inputGeneration
       }, payload.inputSentAtEpochMs, "post");
       return {};
+    case "setWiiRemoteState":
+      api?.setWiiRemoteState?.(payload.buttonMask >>> 0,payload.dpadMask >>> 0,Number(payload.accelX)||0,Number(payload.accelY)||0,Number(payload.accelZ)||0,Number(payload.gyroX)||0,Number(payload.gyroY)||0,Number(payload.gyroZ)||0,Number(payload.pointerX)||0,Number(payload.pointerY)||0,payload.pointerEnabled?1:0);
+      return {};
     case "runFrame":
       if (!presentationLoopActive) {
         api?.pumpHostJobs?.();
@@ -2397,6 +2400,7 @@ function bindApi(module) {
               ]
             )
         : null,
+    setWiiRemoteState: optionalCwrap("SetWiiRemoteState", null, ["number","number","number","number","number","number","number","number","number","number","number"]),
     runFrame: cwrap("RunFrame", null, []),
     frameWidth: cwrap("FrameWidth", "number", []),
     frameHeight: cwrap("FrameHeight", "number", []),

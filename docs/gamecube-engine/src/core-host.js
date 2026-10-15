@@ -640,6 +640,10 @@ export class EmulatorHost {
     this.adapter.setInputState?.(inputState);
   }
 
+  setWiiRemoteState(state) {
+    this.adapter.setWiiRemoteState?.(state);
+  }
+
   saveState() {
     if (this.mode === "dolphin") {
       this.adapter.saveState(0);

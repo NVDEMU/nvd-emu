@@ -513,6 +513,15 @@ export class UpstreamWorkerAdapter {
     this.post("setInputMask", { mask: mask >>> 0 });
   }
 
+  setWiiRemoteState(state) {
+    if (!this.loaded || !state) return;
+    const packed = {buttonMask:state.buttonMask >>> 0,dpadMask:state.dpadMask >>> 0,accelX:Number(state.accelX)||0,accelY:Number(state.accelY)||0,accelZ:Number(state.accelZ)||0,gyroX:Number(state.gyroX)||0,gyroY:Number(state.gyroY)||0,gyroZ:Number(state.gyroZ)||0,pointerX:Number(state.pointerX)||0,pointerY:Number(state.pointerY)||0,pointerEnabled:state.pointerEnabled?1:0};
+    const signature = Object.values(packed).join(":");
+    if (signature === this.lastWiiRemoteStateSignature) return;
+    this.lastWiiRemoteStateSignature = signature;
+    this.post("setWiiRemoteState", packed);
+  }
+
   setInputState(state) {
     if (!this.loaded || !state) {
       return;

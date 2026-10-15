@@ -127,10 +127,16 @@ const elements = {
 const DEBUG_PREF_KEY = "wasm-dolphin.debug-open";
 const OSD_PREF_KEY = "wasm-dolphin.osd-visible-v2";
 const KEY_BINDINGS_PREF_KEY = "nvd-emu-keyboard-bindings-v1";
+const WII_KEY_BINDINGS_PREF_KEY = "nvd-emu-wii-keyboard-bindings-v1";
+const isWiiMode = new URLSearchParams(window.location.search).get("system") === "wii";
+const WII_CONTROL_LABELS = Object.freeze(["WII_A","WII_B","WII_ONE","WII_TWO","WII_PLUS","WII_MINUS","WII_HOME","WII_DPAD_UP","WII_DPAD_DOWN","WII_DPAD_LEFT","WII_DPAD_RIGHT","WII_MOTION_UP","WII_MOTION_DOWN","WII_MOTION_LEFT","WII_MOTION_RIGHT"]);
+const DEFAULT_WII_KEY_BINDINGS = Object.freeze({KeyX:"WII_A",KeyZ:"WII_B",Digit1:"WII_ONE",Digit2:"WII_TWO",Enter:"WII_PLUS",Backspace:"WII_MINUS",KeyH:"WII_HOME",KeyI:"WII_DPAD_UP",KeyK:"WII_DPAD_DOWN",KeyJ:"WII_DPAD_LEFT",KeyL:"WII_DPAD_RIGHT",ArrowUp:"WII_MOTION_UP",ArrowDown:"WII_MOTION_DOWN",ArrowLeft:"WII_MOTION_LEFT",ArrowRight:"WII_MOTION_RIGHT"});
 
 const keyboardPressed = new Set();
 let keyboardBindings = readKeyboardBindings();
 let keyCaptureControl = null;
+let wiiPressed = new Set();
+let wiiPointer = { x: 0, y: 0, enabled: false };
 let touchPressed = new Set();
 let gamepadPressed = new Set();
 let gamepadInputState = null;
@@ -256,6 +262,7 @@ wireFileMounting();
 wireTransport();
 wireKeyboard();
 wireTouchControls();
+wireWiiPointer();
 wireGamepadPolling();
 
 // §28cx main-thread profiler — activates only with ?mainprof=1. Diagnoses
@@ -266,7 +273,7 @@ startMainThreadProfiler();
 
 host
   .init()
-  .then(runSmokeScenario)
+  .then(() => { if (isWiiMode) syncInput("Wii Remote ready"); return runSmokeScenario(); })
   .catch((error) => {
     setStatus(error.message, "error");
   });
@@ -892,6 +899,7 @@ async function mountFile(file) {
     host.setAudioMuted(audio.muted);
     syncGameInfo(game);
     host.start();
+    if (isWiiMode) syncInput("Wii Remote ready");
   } catch (error) {
     setStatus(error.message, "error");
   }
@@ -955,16 +963,36 @@ function renderRootEntries(entries) {
 }
 
 
+function activeControlLabels() {
+  return isWiiMode ? WII_CONTROL_LABELS : CONTROL_LABELS;
+}
+function defaultKeyboardBindings() {
+  return { ...(isWiiMode ? DEFAULT_WII_KEY_BINDINGS : DEFAULT_KEY_BINDINGS) };
+}
+function activeBindingStorageKey() {
+  return isWiiMode ? WII_KEY_BINDINGS_PREF_KEY : KEY_BINDINGS_PREF_KEY;
+}
+function displayKeyboardControl(control) {
+  const labels = {
+    WII_A:"Wii Remote A", WII_B:"Wii Remote B", WII_ONE:"Wii Remote 1",
+    WII_TWO:"Wii Remote 2", WII_PLUS:"Wii Remote +", WII_MINUS:"Wii Remote −",
+    WII_HOME:"Wii Remote HOME", WII_DPAD_UP:"Wii D-pad Up", WII_DPAD_DOWN:"Wii D-pad Down",
+    WII_DPAD_LEFT:"Wii D-pad Left", WII_DPAD_RIGHT:"Wii D-pad Right",
+    WII_MOTION_UP:"Motion Up", WII_MOTION_DOWN:"Motion Down",
+    WII_MOTION_LEFT:"Motion Left", WII_MOTION_RIGHT:"Motion Right"
+  };
+  return labels[control] || formatControlLabel(control);
+}
 function readKeyboardBindings() {
   try {
-    const raw = localStorage.getItem(KEY_BINDINGS_PREF_KEY);
-    if (!raw) return { ...DEFAULT_KEY_BINDINGS };
+    const raw = localStorage.getItem(activeBindingStorageKey());
+    if (!raw) return defaultKeyboardBindings();
     const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return { ...DEFAULT_KEY_BINDINGS };
-    const valid = new Set(CONTROL_LABELS);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return defaultKeyboardBindings();
+    const valid = new Set(activeControlLabels());
     return Object.fromEntries(Object.entries(parsed).filter(([code, control]) =>
       typeof code === "string" && /^[A-Za-z][A-Za-z0-9]*$/.test(code) && valid.has(control)));
-  } catch (_) { return { ...DEFAULT_KEY_BINDINGS }; }
+  } catch (_) { return defaultKeyboardBindings(); }
 }
 function keyboardCodeLabel(code) {
   if (!code) return "Unassigned";
@@ -978,7 +1006,7 @@ function setKeyboardCaptureStatus(message) {
   if (status) status.textContent = message;
 }
 function saveKeyboardBindings() {
-  try { localStorage.setItem(KEY_BINDINGS_PREF_KEY, JSON.stringify(keyboardBindings)); return true; }
+  try { localStorage.setItem(activeBindingStorageKey(), JSON.stringify(keyboardBindings)); return true; }
   catch (_) { setKeyboardCaptureStatus("Remap works for this session, but browser storage blocked saving it."); return false; }
 }
 function assignKeyboardBinding(code, control) {
@@ -995,23 +1023,23 @@ function renderKeyboardBindings() {
   const grid = document.getElementById("keyboardBindingsGrid");
   if (!grid) return;
   grid.replaceChildren();
-  for (const control of CONTROL_LABELS) {
+  for (const control of activeControlLabels()) {
     const row = document.createElement("div");
     row.className = "keyboard-binding-row";
     const name = document.createElement("span");
     name.className = "keyboard-binding-name";
-    name.textContent = formatControlLabel(control);
+    name.textContent = displayKeyboardControl(control);
     const button = document.createElement("button");
     button.type = "button";
     button.className = "keyboard-binding-key";
     const code = Object.keys(keyboardBindings).find((key) => keyboardBindings[key] === control);
     button.textContent = keyCaptureControl === control ? "Press a key…" : keyboardCodeLabel(code);
     button.classList.toggle("capturing", keyCaptureControl === control);
-    button.setAttribute("aria-label", "Remap " + formatControlLabel(control));
+    button.setAttribute("aria-label", "Remap " + displayKeyboardControl(control));
     button.addEventListener("click", () => {
       keyCaptureControl = control;
       renderKeyboardBindings();
-      setKeyboardCaptureStatus("Press a key for " + formatControlLabel(control) + ". Press Esc to cancel.");
+      setKeyboardCaptureStatus("Press a key for " + displayKeyboardControl(control) + ". Press Esc to cancel.");
     });
     row.append(name, button);
     grid.append(row);
@@ -1023,11 +1051,15 @@ function wireKeyboardRemapping() {
   const close = document.getElementById("closeKeyboardControls");
   const reset = document.getElementById("resetKeyboardBindings");
   if (!dialog || !open || !close || !reset) return;
+  const note = document.getElementById("keyboardControlsNote");
+  if (note) note.textContent = isWiiMode
+    ? "Wii Remote buttons and motion directions are remappable. Arrow keys simulate motion by default. The mouse is the fixed pointer and cannot be remapped. Gamepad buttons also map to Wii Remote buttons."
+    : "Keyboard input and gamepad controls are enabled by default. Select an action, then press its replacement key. Remappings are saved in this browser.";
   open.addEventListener("click", () => { renderKeyboardBindings(); if (!dialog.open) dialog.showModal(); });
   close.addEventListener("click", () => { keyCaptureControl = null; dialog.close(); });
   reset.addEventListener("click", () => {
-    keyboardBindings = { ...DEFAULT_KEY_BINDINGS };
-    try { localStorage.removeItem(KEY_BINDINGS_PREF_KEY); } catch (_) {}
+    keyboardBindings = defaultKeyboardBindings();
+    try { localStorage.removeItem(activeBindingStorageKey()); } catch (_) {}
     keyCaptureControl = null;
     renderKeyboardBindings();
     setKeyboardCaptureStatus("Default keyboard controls restored.");
@@ -1035,6 +1067,48 @@ function wireKeyboardRemapping() {
   dialog.addEventListener("cancel", () => { keyCaptureControl = null; });
   dialog.addEventListener("close", () => { keyCaptureControl = null; renderKeyboardBindings(); });
   renderKeyboardBindings();
+}
+function syncWiiInput(source = "Keyboard") {
+  if (!isWiiMode) return;
+  const held = (name) => wiiPressed.has(name);
+  const buttonMask =
+    (held("WII_A") ? 1 << 0 : 0) |
+    (held("WII_B") ? 1 << 1 : 0) |
+    (held("WII_ONE") ? 1 << 2 : 0) |
+    (held("WII_TWO") ? 1 << 3 : 0) |
+    (held("WII_MINUS") ? 1 << 4 : 0) |
+    (held("WII_PLUS") ? 1 << 5 : 0) |
+    (held("WII_HOME") ? 1 << 6 : 0);
+  const dpadMask =
+    (held("WII_DPAD_UP") ? 1 << 0 : 0) |
+    (held("WII_DPAD_DOWN") ? 1 << 1 : 0) |
+    (held("WII_DPAD_LEFT") ? 1 << 2 : 0) |
+    (held("WII_DPAD_RIGHT") ? 1 << 3 : 0);
+  const motionX = Number(held("WII_MOTION_RIGHT")) - Number(held("WII_MOTION_LEFT"));
+  const motionY = Number(held("WII_MOTION_UP")) - Number(held("WII_MOTION_DOWN"));
+  host.setWiiRemoteState({
+    buttonMask, dpadMask,
+    accelX: motionX * 9.80665, accelY: motionY * 9.80665, accelZ: 9.80665,
+    gyroX: -motionY * 2.4, gyroY: -motionX * 2.4, gyroZ: 0,
+    pointerX: wiiPointer.x, pointerY: wiiPointer.y, pointerEnabled: wiiPointer.enabled
+  });
+  if (elements.inputSource) elements.inputSource.textContent = source + " · Wii Remote";
+  for (const chip of elements.controlGrid.children) chip.classList.toggle("active", wiiPressed.has(chip.dataset.control));
+}
+function wireWiiPointer() {
+  if (!isWiiMode || !elements.screen) return;
+  const update = (event) => {
+    if (document.getElementById("keyboardControlsDialog")?.open) return;
+    const rect = elements.screen.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    wiiPointer = {
+      x: Math.max(-1, Math.min(1, ((event.clientX - rect.left) / rect.width) * 2 - 1)),
+      y: Math.max(-1, Math.min(1, 1 - ((event.clientY - rect.top) / rect.height) * 2)),
+      enabled: true
+    };
+    syncInput("Mouse pointer");
+  };
+  elements.screen.addEventListener("mousemove", update, { passive: true });
 }
 
 function wireKeyboard() {
@@ -1221,6 +1295,12 @@ function wireGamepadPolling() {
 
 function syncInput(source) {
   combinedPressed = mergePressedSets(keyboardPressed, touchPressed, gamepadPressed);
+  if (isWiiMode) {
+    const aliases = {A:"WII_A",B:"WII_B",X:"WII_ONE",Y:"WII_TWO",START:"WII_PLUS",L:"WII_MINUS",Z:"WII_HOME",D_UP:"WII_DPAD_UP",D_DOWN:"WII_DPAD_DOWN",D_LEFT:"WII_DPAD_LEFT",D_RIGHT:"WII_DPAD_RIGHT"};
+    wiiPressed = new Set([...combinedPressed].map((button) => aliases[button] || button).filter((button) => WII_CONTROL_LABELS.includes(button)));
+    syncWiiInput(source);
+    return;
+  }
   host.setInputState(inputStateFromPressed(combinedPressed, gamepadInputState));
   elements.inputSource.textContent = source;
 
@@ -1232,11 +1312,11 @@ function syncInput(source) {
 function renderControlGrid() {
   const fragment = document.createDocumentFragment();
 
-  for (const label of CONTROL_LABELS) {
+  for (const label of activeControlLabels()) {
     const chip = document.createElement("span");
     chip.className = "control-chip";
     chip.dataset.control = label;
-    chip.textContent = formatControlLabel(label);
+      chip.textContent = displayKeyboardControl(label);
     fragment.append(chip);
   }
 

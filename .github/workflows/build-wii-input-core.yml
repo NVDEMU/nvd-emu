@@ -1,0 +1,205 @@
+name: Build Wii Remote input-enabled WASM core
+
+on:
+  workflow_run:
+    workflows: ["Sync GameCube WASM player"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nvd-emu-wii-input-core
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
+    runs-on: windows-2022
+    timeout-minutes: 180
+    steps:
+      - name: Check out NVD-EMU
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+
+      - name: Skip if the Wii bridge is already built
+        id: current
+        shell: pwsh
+        run: |
+          $manifest = "docs/gamecube-engine/cores/dolphin/wii-input-core.json"
+          $ready = $false
+          if (Test-Path $manifest) {
+            try {
+              $data = Get-Content $manifest -Raw | ConvertFrom-Json
+              $ready = $data.bridge -eq "nvd-wii-input-bridge-v1"
+            } catch { $ready = $false }
+          }
+          "already_built=$($ready.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+          if ($ready) { Write-Host "The Wii Remote API core is already present." }
+
+      - name: Set up Node.js
+        if: steps.current.outputs.already_built != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.12.0"
+
+      - name: Set up Python
+        if: steps.current.outputs.already_built != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up pinned Rust nightly
+        if: steps.current.outputs.already_built != 'true'
+        uses: dtolnay/rust-toolchain@nightly-2026-05-14
+        with:
+          components: rust-src
+          targets: wasm32-unknown-emscripten
+
+      - name: Install Emscripten, CMake, and Ninja
+        if: steps.current.outputs.already_built != 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $cmakeZip = "$env:RUNNER_TEMP\cmake-4.3.2-windows-x86_64.zip"
+          $cmakeExtract = "$env:RUNNER_TEMP\cmake"
+          Invoke-WebRequest -Uri "https://github.com/Kitware/CMake/releases/download/v4.3.2/cmake-4.3.2-windows-x86_64.zip" -OutFile $cmakeZip
+          if (Test-Path $cmakeExtract) { Remove-Item $cmakeExtract -Recurse -Force }
+          Expand-Archive -Path $cmakeZip -DestinationPath $cmakeExtract
+          $cmake = Get-ChildItem $cmakeExtract -Recurse -Filter cmake.exe | Select-Object -First 1 -ExpandProperty FullName
+          $cmakeBin = Split-Path $cmake
+
+          $emsdk = "$env:USERPROFILE\emsdk"
+          if (Test-Path $emsdk) { Remove-Item $emsdk -Recurse -Force }
+          git clone https://github.com/emscripten-core/emsdk.git $emsdk
+          git -C $emsdk checkout bafd64c26bdaf10bd829163d1575b50b759a72d8
+          if ($LASTEXITCODE -ne 0) { throw "Could not check out the pinned emsdk revision." }
+          & "$emsdk\emsdk.bat" install 5.0.7
+          if ($LASTEXITCODE -ne 0) { throw "Emscripten 5.0.7 installation failed." }
+          & "$emsdk\emsdk.bat" activate 5.0.7
+          if ($LASTEXITCODE -ne 0) { throw "Emscripten 5.0.7 activation failed." }
+
+          python -m pip install --disable-pip-version-check ninja==1.13.0
+          if ($LASTEXITCODE -ne 0) { throw "Could not install Ninja." }
+          $ninja = (Get-Command ninja.exe).Source
+          $rustToolchain = "nightly-2026-05-14-x86_64-pc-windows-msvc"
+          $rustup = (Get-Command rustup.exe).Source
+          $rustc = (& $rustup which rustc --toolchain $rustToolchain).Trim()
+          $cargo = (& $rustup which cargo --toolchain $rustToolchain).Trim()
+          $node = (Get-Command node.exe).Source
+          $emcc = "$emsdk\upstream\emscripten\emcc.bat"
+          $emcmake = "$emsdk\upstream\emscripten\emcmake.bat"
+          $env:PATH = "$cmakeBin;$emsdk\upstream\emscripten;$emsdk\upstream\bin;$(Split-Path $ninja);$(Split-Path $rustc);$(Split-Path $cargo);$(Split-Path $rustup);$env:PATH"
+          foreach ($path in @($cmakeBin, "$emsdk\upstream\emscripten", "$emsdk\upstream\bin", (Split-Path $ninja), (Split-Path $rustc), (Split-Path $cargo), (Split-Path $rustup))) {
+            if ($path) { Add-Content -Path $env:GITHUB_PATH -Value $path }
+          }
+          @(
+            "EMSDK=$emsdk",
+            "EM_CONFIG=$env:USERPROFILE\.emscripten",
+            "DOLPHIN_NODE=$node",
+            "EMCC=$emcc",
+            "EMCMAKE=$emcmake",
+            "CMAKE=$cmake",
+            "NINJA=$ninja",
+            "RUSTC=$rustc",
+            "CARGO=$cargo",
+            "RUSTUP=$rustup",
+            "DOLPHIN_RUST_TOOLCHAIN=$rustToolchain"
+          ) | Add-Content -Path $env:GITHUB_ENV
+          Write-Host "Installed Emscripten, CMake, Ninja, and Rust tools."
+          & $rustc --version --verbose
+          & $cargo --version --verbose
+          & $cmake --version
+          & $ninja --version
+
+      - name: Download the pinned browser runtime source
+        if: steps.current.outputs.already_built != 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $root = "$env:RUNNER_TEMP\wasm-dolphin"
+          if (Test-Path $root) { Remove-Item $root -Recurse -Force }
+          git clone --no-checkout https://github.com/dougchansan/wasm-dolphin.git $root
+          git -C $root checkout --detach 7e38409ace3dda709c178312ff63fd92a3653cc7
+          if ($LASTEXITCODE -ne 0) { throw "Could not check out the pinned wasm-dolphin revision." }
+          New-Item -ItemType Directory -Force -Path "$root\.github\scripts" | Out-Null
+          Copy-Item ".github/scripts/patch-wii-input-core.py" "$root\.github\scripts\patch-wii-input-core.py"
+          "UPSTREAM_ROOT=$root" >> $env:GITHUB_ENV
+
+      - name: Prepare the runner-specific toolchain lock
+        if: steps.current.outputs.already_built != 'true'
+        shell: pwsh
+        run: |
+          node .github/scripts/prepare-wii-build-toolchain.mjs "$env:UPSTREAM_ROOT"
+          if ($LASTEXITCODE -ne 0) { throw "Could not prepare the temporary WASM toolchain lock." }
+
+      - name: Fetch and patch pinned Dolphin source, including the Wii input bridge
+        if: steps.current.outputs.already_built != 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Push-Location $env:UPSTREAM_ROOT
+          try {
+            npm install
+            if ($LASTEXITCODE -ne 0) { throw "npm install failed." }
+            npm run verify:toolchain
+            if ($LASTEXITCODE -ne 0) { throw "WASM toolchain verification failed." }
+            npm run fetch:dolphin
+            if ($LASTEXITCODE -ne 0) { throw "Fetching the pinned Dolphin source failed." }
+            npm run patch:upstream
+            if ($LASTEXITCODE -ne 0) { throw "Applying the locked upstream patches failed." }
+            python .github/scripts/patch-wii-input-core.py $env:UPSTREAM_ROOT
+            if ($LASTEXITCODE -ne 0) { throw "Applying the Wii Remote C++ bridge failed." }
+            npm run configure:upstream
+            if ($LASTEXITCODE -ne 0) { throw "CMake/Emscripten configuration failed." }
+            $env:BUILD_PARALLELISM = "3"
+            npm run build:upstream:full-core
+            if ($LASTEXITCODE -ne 0) { throw "The Wii-input-enabled Dolphin WASM build failed." }
+          } finally { Pop-Location }
+
+      - name: Install the rebuilt browser core in NVD-EMU
+        if: steps.current.outputs.already_built != 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $source = "$env:UPSTREAM_ROOT\cores\dolphin"
+          $destination = "docs/gamecube-engine/cores/dolphin"
+          foreach ($file in @("dolphin-core-upstream.js", "dolphin-core-upstream.wasm")) {
+            if (-not (Test-Path "$source\$file")) { throw "Missing rebuilt core asset: $file" }
+            Copy-Item "$source\$file" "$destination\$file" -Force
+          }
+          $wasmBytes = (Get-Item "$destination\dolphin-core-upstream.wasm").Length
+          if ($wasmBytes -lt 10000000) { throw "The rebuilt WASM artifact is unexpectedly small ($wasmBytes bytes)." }
+          $record = @{
+            bridge = "nvd-wii-input-bridge-v1"
+            wasmDolphinCommit = "7e38409ace3dda709c178312ff63fd92a3653cc7"
+            dolphinSourceCommit = "e22551eae1c84a7e4d0b6a5c519ef4ed4ef69df1"
+            wasmBytes = $wasmBytes
+            buildRun = $env:GITHUB_RUN_ID
+            buildAttempt = $env:GITHUB_RUN_ATTEMPT
+          } | ConvertTo-Json -Compress
+          Set-Content -Path "$destination\wii-input-core.json" -Value $record -Encoding utf8
+          if (-not (Select-String -Path "$destination\dolphin-core-upstream.js" -SimpleMatch "SetWiiRemoteState" -Quiet)) {
+            throw "The rebuilt JavaScript glue does not expose SetWiiRemoteState."
+          }
+          node --check "$destination\dolphin-core-upstream.js"
+
+      - name: Commit the Wii input-enabled core
+        if: steps.current.outputs.already_built != 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/gamecube-engine/cores/dolphin/dolphin-core-upstream.js docs/gamecube-engine/cores/dolphin/dolphin-core-upstream.wasm docs/gamecube-engine/cores/dolphin/wii-input-core.json
+          git commit -m "Build Dolphin WASM core with Wii Remote input bridge"
+          if ($LASTEXITCODE -ne 0) { throw "Could not commit the rebuilt input-enabled core." }
+          git fetch origin main
+          git rebase origin/main
+          if ($LASTEXITCODE -ne 0) { throw "Could not rebase the rebuilt core onto latest main." }
+          git push origin HEAD:main
+          if ($LASTEXITCODE -ne 0) { throw "Could not push the rebuilt core." }

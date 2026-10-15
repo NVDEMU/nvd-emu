@@ -35,7 +35,7 @@ for include in (
     if include not in core:
         core = replace_once(core, '#include "Core/HW/GCPad.h"', '#include "Core/HW/GCPad.h"\n' + include,
                             "include Wii Remote input headers")
-for include in ("#include <optional>", "#include <string_view>", "#include <cmath"):
+for include in ("#include <optional>", "#include <string_view>", "#include <cmath>"):
     if include not in core:
         core = replace_once(core, "#include <memory>", "#include <memory>\n" + include,
                             "include standard-library types")

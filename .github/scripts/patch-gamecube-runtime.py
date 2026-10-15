@@ -283,7 +283,7 @@ app = replace_once(app, 'function syncInput(source) {\n  combinedPressed = merge
 app = replace_once(app, 'function renderControlGrid() {\n  const fragment = document.createDocumentFragment();\n\n  for (const label of CONTROL_LABELS) {',
     'function renderControlGrid() {\n  const fragment = document.createDocumentFragment();\n\n  for (const label of activeControlLabels()) {',
     "render active controls")
-app = replace_once(app, '      chip.textContent = formatControlLabel(label);',
+app = replace_once(app, '    chip.textContent = formatControlLabel(label);',
     '      chip.textContent = displayKeyboardControl(label);',
     "control grid labels")
 app = replace_once(app, 'wireKeyboard();\nwireTouchControls();\nwireGamepadPolling();',

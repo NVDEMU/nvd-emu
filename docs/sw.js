@@ -1,4 +1,4 @@
-const CACHE_NAME = "nvd-emu-web-shell-v16";
+const CACHE_NAME = "nvd-emu-web-shell-v17";
 const APP_FILES = [
   "./", "./index.html", "./library.html", "./systems.html", "./player.html",
   "./settings.html", "./emulator.html", "./site.css", "./systems-data.js", "./artwork.js",

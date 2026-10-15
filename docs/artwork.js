@@ -126,7 +126,8 @@
       }
     }
     const extension=(fileName.split(".").pop()||"").toLowerCase();
-    const playlists=[system.boxartPlaylist];
+    const fallbackPlaylists={gamecube:"Nintendo - GameCube",wii:"Nintendo - Wii"};
+    const playlists=[system.boxartPlaylist||fallbackPlaylists[entry.systemId]];
     if(entry.systemId==="gb"||system.name==="Game Boy / Game Boy Color") {
       playlists.push(extension==="gbc"?"Nintendo - Game Boy Color":"Nintendo - Game Boy");
     }

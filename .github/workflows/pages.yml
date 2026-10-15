@@ -85,7 +85,7 @@ jobs:
           boxart_code = artwork.split("function setBoxArt", 1)[1].split("window.NVD_ARTWORK", 1)[0]
           if "crossOrigin" in boxart_code:
               raise SystemExit("Game-cover images must not force CORS mode; some thumbnail hosts do not permit it")
-          if "is3dsPlayerNavigation" not in service_worker or "nvd-emu-web-shell-v16" not in service_worker:
+          if "is3dsPlayerNavigation" not in service_worker or "nvd-emu-web-shell-v17" not in service_worker:
               raise SystemExit("Cross-origin isolation must be scoped to the 3DS player and use the refreshed cache version")
           if "coepCredentialless" in service_worker:
               raise SystemExit("Legacy global COEP state must not be used; it can break artwork on non-3DS pages")
@@ -102,6 +102,10 @@ jobs:
               raise SystemExit("The dynamic system picker and compatibility list are missing")
           if "wasm-dolphin" not in html or "retail-disc library flow" not in html or "gamecube" not in catalog or "wii" not in catalog:
               raise SystemExit("GameCube/Wii WASM integration marker or system profiles are missing")
+          if 'boxartPlaylist:"Nintendo - GameCube"' not in catalog or 'boxartPlaylist:"Nintendo - Wii"' not in catalog:
+              raise SystemExit("GameCube/Wii cover-art playlist configuration is missing")
+          if "fallbackPlaylists={gamecube:" not in artwork:
+              raise SystemExit("GameCube/Wii cover-art playlist fallback is missing")
           engine_index = Path("docs/gamecube-engine/index.html").read_text(encoding="utf-8")
           engine_app = Path("docs/gamecube-engine/src/app.js").read_text(encoding="utf-8")
           if 'id="keyboardControlsButton"' not in engine_index or "function wireKeyboardRemapping()" not in engine_app:
